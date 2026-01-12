@@ -45,6 +45,7 @@ pip install -r requirements_drive.txt
 ### 4. First-Time Authentication
 
 When you first use the Drive service, it will:
+
 1. Open a browser window for authentication
 2. Ask you to sign in with your Google account
 3. Request permission to read your Drive files
@@ -61,6 +62,7 @@ POST /drive/authenticate
 Opens OAuth2 flow for authentication. Must be done before using other Drive endpoints.
 
 **Response:**
+
 ```json
 {
   "status": "authenticated",
@@ -75,15 +77,18 @@ POST /drive/register?client_id=YOUR_CLIENT_ID&drive_url=DRIVE_URL_OR_FILE_ID
 ```
 
 **Parameters:**
+
 - `client_id`: Your client ID (must be created first via `/client` endpoint)
 - `drive_url`: Google Drive document URL or file ID
 
 **Example:**
+
 ```bash
 curl -X POST "http://localhost:8000/drive/register?client_id=mycompany&drive_url=https://docs.google.com/document/d/1ABC123xyz/edit"
 ```
 
 **Response:**
+
 ```json
 {
   "status": "registered",
@@ -101,6 +106,7 @@ POST /drive/process?client_id=YOUR_CLIENT_ID&file_id=FILE_ID
 Immediately process a document and send its content to Backboard.
 
 **Response:**
+
 ```json
 {
   "status": "processed",
@@ -116,10 +122,12 @@ POST /drive/start-polling?client_id=YOUR_CLIENT_ID&interval=300
 ```
 
 **Parameters:**
+
 - `client_id`: Your client ID
 - `interval`: Polling interval in seconds (default: 300 = 5 minutes)
 
 **Response:**
+
 ```json
 {
   "status": "polling_started",
@@ -139,6 +147,7 @@ GET /drive/documents?client_id=YOUR_CLIENT_ID
 Returns all registered documents for a client.
 
 **Response:**
+
 ```json
 {
   "client_id": "mycompany",
@@ -168,29 +177,29 @@ async def setup_drive_monitoring():
     base_url = "http://localhost:8000"
     client_id = "mycompany"
     api_key = "your_backboard_api_key"
-    
+
     async with httpx.AsyncClient() as client:
         # 1. Create a client (if not exists)
         await client.post(
             f"{base_url}/client",
             params={"client_id": client_id, "api_key": api_key}
         )
-        
+
         # 2. Authenticate with Google Drive
         await client.post(f"{base_url}/drive/authenticate")
-        
+
         # 3. Register documents for monitoring
         drive_urls = [
             "https://docs.google.com/document/d/1ABC123xyz/edit",
             "https://docs.google.com/document/d/2DEF456abc/edit"
         ]
-        
+
         for url in drive_urls:
             await client.post(
                 f"{base_url}/drive/register",
                 params={"client_id": client_id, "drive_url": url}
             )
-        
+
         # 4. Start polling (checks every 5 minutes)
         await client.post(
             f"{base_url}/drive/start-polling",
@@ -204,19 +213,23 @@ asyncio.run(setup_drive_monitoring())
 ## How It Works
 
 ### 1. Content Detection
+
 - Each document's content is hashed using MD5
 - Hash is stored in the database
 - On each poll, new hash is compared with stored hash
 - Only changed documents are processed
 
 ### 2. Content Processing
+
 When a document changes:
+
 1. Content is extracted from Google Docs
 2. Formatted with metadata (title, last modified, link)
 3. Sent to Backboard with memory enabled
 4. Database is updated with new hash and content
 
 ### 3. Backboard Integration
+
 Content is sent to Backboard in this format:
 
 ```
@@ -260,20 +273,24 @@ CREATE TABLE drive_documents (
 ### Authentication Issues
 
 **Problem:** "Credentials file not found"
+
 - **Solution:** Download OAuth2 credentials from Google Cloud Console and save as `credentials.json`
 
 **Problem:** "The project has been deleted"
+
 - **Solution:** Create a new project in Google Cloud Console and enable Drive API
 
 ### Permission Errors
 
 **Problem:** "Cannot access file"
+
 - **Solution:** Ensure the Google account used for authentication has access to the Drive document
 
 ### Polling Not Working
 
 **Problem:** Documents not being processed
-- **Solution:** 
+
+- **Solution:**
   1. Check server logs for errors
   2. Verify documents are registered using `/drive/documents` endpoint
   3. Ensure polling was started with `/drive/start-polling`
@@ -291,6 +308,7 @@ CREATE TABLE drive_documents (
 ## Contributing
 
 When adding new features:
+
 1. Update the database schema in `db.py`
 2. Add new endpoints in `server.py`
 3. Update this README with usage examples

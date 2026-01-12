@@ -13,6 +13,42 @@ from cryptography.fernet import Fernet
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src', 'backend'))
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
+    """Setup test database path before any tests run."""
+    import tempfile
+    test_db = tempfile.mktemp(suffix=".db")
+    os.environ["TEST_DB_NAME"] = test_db
+    yield test_db
+    # Cleanup
+    if os.path.exists(test_db):
+        try:
+            os.remove(test_db)
+        except:
+            pass
+
+
+@pytest.fixture(autouse=True)
+def clean_test_db():
+    """Clean database before each test."""
+    db_name = os.getenv("TEST_DB_NAME", ":memory:")
+    if os.path.exists(db_name):
+        con = sqlite3.connect(db_name)
+        cur = con.cursor()
+        # Clear all tables
+        try:
+            cur.execute("DELETE FROM drive_documents")
+            cur.execute("DELETE FROM chats")
+            cur.execute("DELETE FROM assistants")
+            cur.execute("DELETE FROM clients")
+            con.commit()
+        except:
+            pass
+        finally:
+            con.close()
+    yield
+
+
 @pytest.fixture
 def temp_db(tmp_path):
     """Create a temporary database for testing."""
@@ -38,6 +74,18 @@ def temp_db(tmp_path):
             chat_id TEXT PRIMARY KEY,
             channel_name TEXT,
             chat TEXT
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS drive_documents (
+            file_id TEXT PRIMARY KEY,
+            client_id TEXT,
+            file_name TEXT,
+            content_hash TEXT,
+            last_modified TEXT,
+            content TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     con.commit()

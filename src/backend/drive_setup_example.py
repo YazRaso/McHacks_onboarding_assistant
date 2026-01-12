@@ -16,25 +16,25 @@ import sys
 
 async def main():
     """Main demonstration workflow."""
-    
+
     # Configuration
     base_url = "http://localhost:8000"
     client_id = "demo_company"
     backboard_api_key = input("Enter your Backboard API key: ").strip()
-    
+
     if not backboard_api_key:
         print("Error: Backboard API key is required")
         sys.exit(1)
-    
+
     async with httpx.AsyncClient(timeout=30.0) as client:
         print("\n=== Setting up Onboarding Assistant with Drive Integration ===\n")
-        
+
         # Step 1: Create a client
         print("Step 1: Creating client...")
         try:
             response = await client.post(
                 f"{base_url}/client",
-                params={"client_id": client_id, "api_key": backboard_api_key}
+                params={"client_id": client_id, "api_key": backboard_api_key},
             )
             if response.status_code == 201:
                 print(f"✓ Client '{client_id}' created successfully")
@@ -46,7 +46,7 @@ async def main():
         except Exception as e:
             print(f"✗ Error: {e}")
             return
-        
+
         # Step 2: Authenticate with Google Drive
         print("\nStep 2: Authenticating with Google Drive...")
         print("(This will open a browser window for OAuth authentication)")
@@ -60,29 +60,29 @@ async def main():
         except Exception as e:
             print(f"✗ Error: {e}")
             return
-        
+
         # Step 3: Register documents
         print("\nStep 3: Registering Google Drive documents...")
         print("Enter Google Drive document URLs (one per line).")
         print("Press Enter on an empty line when done.\n")
-        
+
         drive_urls = []
         while True:
             url = input("Drive URL: ").strip()
             if not url:
                 break
             drive_urls.append(url)
-        
+
         if not drive_urls:
             print("No documents to register. Exiting.")
             return
-        
+
         registered_count = 0
         for url in drive_urls:
             try:
                 response = await client.post(
                     f"{base_url}/drive/register",
-                    params={"client_id": client_id, "drive_url": url}
+                    params={"client_id": client_id, "drive_url": url},
                 )
                 if response.status_code == 201:
                     data = response.json()
@@ -92,18 +92,18 @@ async def main():
                     print(f"✗ Failed to register {url}: {response.text}")
             except Exception as e:
                 print(f"✗ Error registering {url}: {e}")
-        
+
         print(f"\nRegistered {registered_count} document(s)")
-        
+
         # Step 4: Start polling
         print("\nStep 4: Starting document polling...")
         interval = input("Enter polling interval in seconds (default: 300): ").strip()
         interval = int(interval) if interval.isdigit() else 300
-        
+
         try:
             response = await client.post(
                 f"{base_url}/drive/start-polling",
-                params={"client_id": client_id, "interval": interval}
+                params={"client_id": client_id, "interval": interval},
             )
             if response.status_code == 201:
                 data = response.json()
@@ -111,31 +111,34 @@ async def main():
                 print(f"  - Monitoring {data['document_count']} document(s)")
                 print(f"  - Check interval: {data['interval']} seconds")
                 print("\nThe server is now monitoring your documents for changes.")
-                print("Content will automatically be sent to Backboard when changes are detected.")
+                print(
+                    "Content will automatically be sent to Backboard when changes are detected."
+                )
             else:
                 print(f"✗ Error starting polling: {response.text}")
         except Exception as e:
             print(f"✗ Error: {e}")
-        
+
         # Show registered documents
         print("\n=== Registered Documents ===")
         try:
             response = await client.get(
-                f"{base_url}/drive/documents",
-                params={"client_id": client_id}
+                f"{base_url}/drive/documents", params={"client_id": client_id}
             )
             if response.status_code == 200:
                 data = response.json()
-                for doc in data['documents']:
+                for doc in data["documents"]:
                     print(f"\n📄 {doc['file_name']}")
                     print(f"   ID: {doc['file_id']}")
                     print(f"   Last Modified: {doc['last_modified']}")
-                    print(f"   Status: {'Processed' if doc['content_hash'] else 'Pending'}")
+                    print(
+                        f"   Status: {'Processed' if doc['content_hash'] else 'Pending'}"
+                    )
             else:
                 print(f"Could not retrieve documents: {response.text}")
         except Exception as e:
             print(f"Error: {e}")
-        
+
         print("\n✅ Setup complete! Your Drive integration is active.")
 
 
