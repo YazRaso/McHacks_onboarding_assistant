@@ -4,3 +4,8 @@ __pycache__
 *.db
 .DS_Store
 .pytest_cache
+
+# Google Drive OAuth credentials and tokens
+credentials.json
+token.json
+

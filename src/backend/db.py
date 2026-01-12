@@ -36,6 +36,19 @@ cur.execute("""
     )
 """)
 
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS drive_documents (
+        file_id TEXT PRIMARY KEY,
+        client_id TEXT,
+        file_name TEXT,
+        content_hash TEXT,
+        last_modified TEXT,
+        content TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+
 def get_connection():
     con = sqlite3.connect("demo.db")
     con.row_factory = sqlite3.Row
@@ -106,3 +119,51 @@ def create_thread(chat_id: str, channel_name: str, chat: str):
     """, (chat_id, channel_name, chat))
     con.commit()
     con.close()
+
+# Drive document functions
+def lookup_drive_document(file_id: str):
+    con = get_connection()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("""
+        SELECT * FROM drive_documents WHERE file_id = ?
+    """, (file_id,))
+    doc = cur.fetchone()
+    con.close()
+    return dict(doc) if doc else None
+
+def create_drive_document(file_id: str, client_id: str, file_name: str, 
+                         content_hash: str, last_modified: str, content: str):
+    con = get_connection()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("""
+        INSERT INTO drive_documents 
+        (file_id, client_id, file_name, content_hash, last_modified, content) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (file_id, client_id, file_name, content_hash, last_modified, content))
+    con.commit()
+    con.close()
+
+def update_drive_document(file_id: str, content_hash: str, content: str):
+    con = get_connection()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("""
+        UPDATE drive_documents 
+        SET content_hash = ?, content = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE file_id = ?
+    """, (content_hash, content, file_id))
+    con.commit()
+    con.close()
+
+def get_all_drive_documents_for_client(client_id: str):
+    con = get_connection()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("""
+        SELECT * FROM drive_documents WHERE client_id = ?
+    """, (client_id,))
+    docs = cur.fetchall()
+    con.close()
+    return [dict(doc) for doc in docs] if docs else []
