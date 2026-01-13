@@ -1,16 +1,39 @@
+"use client";
+
 import "./globals.css";
 import Link from "next/link";
-
-export const metadata = {
-  title: "Backboard Dashboard",
-  description: "Web App dashboard for Backboard.io",
-};
+import { useEffect } from "react";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    const buttons = document.querySelectorAll(".ripple");
+    buttons.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        const div = document.createElement("div");
+        const rect = button.getBoundingClientRect();
+        const xPos = (event as MouseEvent).clientX - rect.left;
+        const yPos = (event as MouseEvent).clientY - rect.top;
+        div.classList.add("ripple-effect");
+        const size = (button as HTMLElement).offsetHeight;
+        div.style.height = size + "px";
+        div.style.width = size + "px";
+        div.style.top = yPos - size / 2 + "px";
+        div.style.left = xPos - size / 2 + "px";
+        div.style.background =
+          (button as HTMLElement).dataset.rippleColor || "white";
+        button.appendChild(div);
+        setTimeout(() => {
+          div.remove();
+        }, 2000);
+      });
+    });
+  }, []);
+
   return (
     <html lang="en">
       <body>
