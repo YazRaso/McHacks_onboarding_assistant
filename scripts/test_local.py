@@ -25,7 +25,7 @@ def test_root():
     print(f"Response: {response.json()}")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    print("✓ Root endpoint working!")
+    print("OK Root endpoint working!")
 
 
 def test_api_docs():
@@ -33,7 +33,7 @@ def test_api_docs():
     print_section("Testing API Documentation")
     response = requests.get(f"{BASE_URL}/docs")
     print(f"GET /docs → Status: {response.status_code}")
-    print("✓ API documentation available at http://localhost:8080/docs")
+    print("OK API documentation available at http://localhost:8080/docs")
 
 
 def main():
@@ -52,7 +52,7 @@ def main():
         test_api_docs()
 
         print_section("Test Summary")
-        print("✓ All basic tests passed!")
+        print("OK All basic tests passed!")
         print("\nServer is running and ready for:")
         print("  - Client creation (/client)")
         print("  - Drive authentication (/drive/authenticate)")
@@ -67,16 +67,16 @@ def main():
         print("  3. Run: python src/backend/drive_setup_example.py")
 
         print("\n" + "=" * 60)
-        print("✅ Server is functional and ready for integration!")
+        print("[OK] Server is functional and ready for integration!")
         print("=" * 60 + "\n")
 
     except requests.exceptions.ConnectionError:
-        print("\n❌ Error: Could not connect to server!")
+        print("\n[ERROR] Error: Could not connect to server!")
         print("Please start the server first:")
         print("  cd src/backend && uvicorn server:app --reload --port 8080")
         return 1
     except Exception as e:
-        print(f"\n❌ Test failed: {e}")
+        print(f"\n[ERROR] Test failed: {e}")
         return 1
 
     return 0

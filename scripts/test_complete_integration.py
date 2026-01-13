@@ -60,20 +60,20 @@ def test_complete_workflow():
             params={"client_id": CLIENT_ID, "api_key": BACKBOARD_API_KEY},
         )
         if response.status_code == 201:
-            print(f"✅ Client '{CLIENT_ID}' created successfully")
+            print(f"[OK] Client '{CLIENT_ID}' created successfully")
         elif response.status_code == 409:
-            print(f"✅ Client '{CLIENT_ID}' already exists")
+            print(f"[OK] Client '{CLIENT_ID}' already exists")
         else:
-            print(f"❌ Error: {response.text}")
+            print(f"[ERROR] Error: {response.text}")
             return
     except Exception as e:
-        print(f"❌ Error creating client: {e}")
+        print(f"[ERROR] Error creating client: {e}")
         return
 
     # Step 2: Authenticate with Drive (already done - token exists)
     print_step(2, "Verifying Drive authentication")
-    print("✅ Drive authentication already completed")
-    print("✅ Token file exists at src/backend/token.json")
+    print("[OK] Drive authentication already completed")
+    print("[OK] Token file exists at src/backend/token.json")
 
     # Step 3: Register the Meetings document
     print_step(3, "Registering Meetings document")
@@ -84,13 +84,13 @@ def test_complete_workflow():
         )
         if response.status_code == 201:
             data = response.json()
-            print(f"✅ Document registered: {data.get('file_id')}")
+            print(f"[OK] Document registered: {data.get('file_id')}")
             print(f"   Message: {data.get('message')}")
         else:
-            print(f"⚠️  Response: {response.status_code}")
+            print(f"[WARN]  Response: {response.status_code}")
             print(f"   {response.text}")
     except Exception as e:
-        print(f"❌ Error registering document: {e}")
+        print(f"[ERROR] Error registering document: {e}")
         return
 
     # Step 4: Process the document manually
@@ -102,14 +102,14 @@ def test_complete_workflow():
         )
         if response.status_code == 201:
             data = response.json()
-            print(f"✅ Document processed successfully!")
+            print(f"[OK] Document processed successfully!")
             print(f"   File ID: {data.get('file_id')}")
             print(f"   Message: {data.get('message')}")
         else:
-            print(f"⚠️  Response: {response.status_code}")
+            print(f"[WARN]  Response: {response.status_code}")
             print(f"   {response.text}")
     except Exception as e:
-        print(f"❌ Error processing document: {e}")
+        print(f"[ERROR] Error processing document: {e}")
         return
 
     # Step 5: Check registered documents
@@ -120,16 +120,16 @@ def test_complete_workflow():
         )
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Found {data['document_count']} registered document(s)")
+            print(f"[OK] Found {data['document_count']} registered document(s)")
             for doc in data["documents"]:
-                print(f"\n   📄 {doc['file_name']}")
+                print(f"\n    {doc['file_name']}")
                 print(f"      File ID: {doc['file_id']}")
                 print(f"      Last Modified: {doc['last_modified']}")
                 print(f"      Content Hash: {doc['content_hash'][:16]}...")
         else:
-            print(f"⚠️  Response: {response.status_code}")
+            print(f"[WARN]  Response: {response.status_code}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
 
     # Step 6: Test message query
     print_step(6, "Testing Backboard memory query")
@@ -142,26 +142,26 @@ def test_complete_workflow():
             },
         )
         if response.status_code == 201:
-            print(f"✅ Query sent to Backboard successfully!")
-            print(f"\n📝 Response from Backboard:")
+            print(f"[OK] Query sent to Backboard successfully!")
+            print(f"\nNote: Response from Backboard:")
             print(f"   {response.text[:500]}...")
         else:
-            print(f"⚠️  Response: {response.status_code}")
+            print(f"[WARN]  Response: {response.status_code}")
             print(f"   {response.text}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
 
     # Summary
     print("\n" + "=" * 60)
-    print("✅ COMPLETE INTEGRATION TEST FINISHED!")
+    print("[OK] COMPLETE INTEGRATION TEST FINISHED!")
     print("=" * 60)
-    print("\n📊 Summary:")
-    print("  ✅ Client created with Backboard")
-    print("  ✅ Google Drive authenticated")
-    print("  ✅ Document registered for monitoring")
-    print("  ✅ Document processed and sent to Backboard")
-    print("  ✅ Memory stored in Backboard")
-    print("\n🚀 Next steps:")
+    print("\nSummary: Summary:")
+    print("  [OK] Client created with Backboard")
+    print("  [OK] Google Drive authenticated")
+    print("  [OK] Document registered for monitoring")
+    print("  [OK] Document processed and sent to Backboard")
+    print("  [OK] Memory stored in Backboard")
+    print("\nNext: Next steps:")
     print("  • Start polling: POST /drive/start-polling")
     print("  • Add more documents from your folder")
     print("  • Query the assistant about meeting notes")

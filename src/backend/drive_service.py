@@ -243,14 +243,14 @@ Link: {metadata.get('webViewLink', 'N/A')}
                         document.document_id
                     )
                     if status.status == "indexed":
-                        print(f"✅ Document indexed successfully: {metadata['name']}")
+                        print(f"[OK] Document indexed successfully: {metadata['name']}")
                         break
                     elif status.status == "failed":
-                        print(f"❌ Document indexing failed: {status.status_message}")
+                        print(f"[ERROR] Document indexing failed: {status.status_message}")
                         return
                     await asyncio.sleep(2)
                 else:
-                    print(f"⚠️  Document indexing timeout for {metadata['name']}")
+                    print(f"[WARN]  Document indexing timeout for {metadata['name']}")
 
             finally:
                 # Clean up temporary file
