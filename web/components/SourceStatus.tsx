@@ -16,96 +16,78 @@ export default function SourceStatus({
   telegram,
   summarizer,
 }: Props) {
+  const sources = [
+    { name: "Google Drive", data: drive, icon: "add_to_drive" },
+    { name: "Codebase", data: codebase, icon: "terminal" },
+    { name: "Telegram Bot", data: telegram, icon: "send" },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 bg-white rounded shadow">
-        <h3 className="text-lg font-medium">Sources</h3>
-        <ul className="mt-3 space-y-2">
-          <li className="flex justify-between items-center">
-            <div>
-              <div className="font-semibold">Drive</div>
-              <div className="text-sm text-slate-500">
-                {drive?.lastUpdated ?? "Never"}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
+      <div className="glass-card p-6 rounded-3xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="material-symbols-outlined text-zinc-400">tune</div>
+          <h3 className="text-lg font-bold">Data Sources</h3>
+        </div>
+        <div className="space-y-4">
+          {sources.map((source) => (
+            <div key={source.name} className="flex justify-between items-center p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
+              <div className="flex items-center gap-4">
+                <div className="material-symbols-outlined text-2xl opacity-80 text-zinc-400">{source.icon}</div>
+                <div>
+                  <div className="font-semibold">{source.name}</div>
+                  <div className="text-xs text-zinc-500">
+                    Sync: {source.data?.lastUpdated ?? "Never"}
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${source.data?.connected
+                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  }`}
+              >
+                {source.data?.connected ? "Online" : "Offline"}
               </div>
             </div>
-            <div
-              className={`px-2 py-1 rounded-full text-sm ${
-                drive?.connected
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {drive?.connected ? "Connected" : "Disconnected"}
-            </div>
-          </li>
-
-          <li className="flex justify-between items-center">
-            <div>
-              <div className="font-semibold">Codebase</div>
-              <div className="text-sm text-slate-500">
-                {codebase?.lastUpdated ?? "Never"}
-              </div>
-            </div>
-            <div
-              className={`px-2 py-1 rounded-full text-sm ${
-                codebase?.connected
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {codebase?.connected ? "Connected" : "Disconnected"}
-            </div>
-          </li>
-
-          <li className="flex justify-between items-center">
-            <div>
-              <div className="font-semibold">Telegram</div>
-              <div className="text-sm text-slate-500">
-                {telegram?.lastUpdated ?? "Never"}
-              </div>
-            </div>
-            <div
-              className={`px-2 py-1 rounded-full text-sm ${
-                telegram?.connected
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {telegram?.connected ? "Connected" : "Disconnected"}
-            </div>
-          </li>
-        </ul>
+          ))}
+        </div>
       </div>
 
-      <div className="p-4 bg-white rounded shadow">
-        <h3 className="text-lg font-medium">Summarizer / Context Extractor</h3>
-        <div className="mt-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-semibold">Status</div>
-              <div className="text-sm text-slate-500">
-                {summarizer?.lastRun ?? "Never run"}
-              </div>
-            </div>
-            <div>
+      <div className="glass-card p-6 rounded-3xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="material-symbols-outlined text-zinc-400">smart_toy</div>
+          <h3 className="text-lg font-bold">Intelligence Engine</h3>
+        </div>
+        <div className="space-y-6">
+          <div className="p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800/50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-zinc-400">Memory Sync Status</span>
               <span
-                className={`px-3 py-1 rounded-full text-sm ${
-                  summarizer?.status === "running"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : summarizer?.status === "ok"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${summarizer?.status === "running"
+                  ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                  : summarizer?.status === "ok"
+                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                    : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  }`}
               >
-                {summarizer?.status}
+                {summarizer?.status || "Idle"}
               </span>
             </div>
+            <div className="text-sm font-bold">{summarizer?.lastRun || "No activity recorded"}</div>
           </div>
 
-          <div className="mt-4 text-sm text-slate-600">
-            The summarizer extracts highlights from connected sources and pushes
-            to Backboard LLM Memory. You can enable the Demo Repo toggle under
-            Connected Apps to use hardcoded demo configuration.
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Processing Insights</h4>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              The extraction pipeline is monitoring connected nodes for updates.
+              New fragments are automatically vector-indexed into your Backboard LLM Memory.
+            </p>
+            <div className="pt-2">
+              <button className="btn-secondary w-full py-2.5 text-sm">
+                Manually Request Sync
+              </button>
+            </div>
           </div>
         </div>
       </div>

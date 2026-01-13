@@ -9,11 +9,22 @@ import os
 import asyncio
 from backboard import BackboardClient
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
 
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For demo purposes, allowing all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 drive_service = None  # Will be initialized when needed
 
 
@@ -243,3 +254,60 @@ async def get_drive_documents(client_id: str):
         "document_count": len(documents),
         "documents": documents,
     }
+
+@app.get("/system/status")
+async def get_system_status(client_id: str = "default_user"):
+    """
+    Get the connection status of all services.
+    """
+    client = db.lookup_client(client_id)
+    drive_docs = db.get_all_drive_documents_for_client(client_id)
+    
+    # Check if telegram bot is running (simplified placeholder)
+    # In a real app, this would check a process or heartbeat
+    telegram_connected = False 
+    
+    return {
+        "client": {
+            "id": client_id,
+            "exists": client is not None,
+            "has_api_key": client is not None and client.get("api_key") is not None
+        },
+        "drive": {
+            "connected": len(drive_docs) > 0,
+            "document_count": len(drive_docs),
+            "lastUpdated": drive_docs[0]["updated_at"] if drive_docs else None
+        },
+        "telegram": {
+            "connected": telegram_connected,
+            "lastUpdated": None
+        },
+        "codebase": {
+            "connected": True, # Placeholder for demo
+            "lastUpdated": "2026-01-12 10:00 UTC" # Placeholder
+        }
+    }
+
+@app.get("/activity")
+async def get_activity(client_id: str = "default_user", limit: int = 10):
+    """
+    Get recent activity across all sources.
+    """
+    # Get recent drive updates
+    docs = db.get_all_drive_documents_for_client(client_id)
+    drive_activity = [
+        {
+            "source": "Drive",
+            "title": f"Document '{doc['file_name']}' synced",
+            "summary": f"Extracted context from {doc['file_name']}",
+            "time": doc["updated_at"],
+            "color": "emerald"
+        }
+        for doc in docs
+    ]
+    
+    # Get recent chat updates (simplified)
+    # In a real app we'd query the chats table for timestamps
+    # For now, let's keep it simple or use mocks if table empty
+    
+    return sorted(drive_activity, key=lambda x: x["time"], reverse=True)[:limit]

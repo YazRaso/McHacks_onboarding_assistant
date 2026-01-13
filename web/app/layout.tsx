@@ -2,79 +2,117 @@
 
 import "./globals.css";
 import Link from "next/link";
-import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
+import { useState } from "react";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    const buttons = document.querySelectorAll(".ripple");
-    buttons.forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        const div = document.createElement("div");
-        const rect = button.getBoundingClientRect();
-        const xPos = (event as MouseEvent).clientX - rect.left;
-        const yPos = (event as MouseEvent).clientY - rect.top;
-        div.classList.add("ripple-effect");
-        const size = (button as HTMLElement).offsetHeight;
-        div.style.height = size + "px";
-        div.style.width = size + "px";
-        div.style.top = yPos - size / 2 + "px";
-        div.style.left = xPos - size / 2 + "px";
-        div.style.background =
-          (button as HTMLElement).dataset.rippleColor || "white";
-        button.appendChild(div);
-        setTimeout(() => {
-          div.remove();
-        }, 2000);
-      });
-    });
-  }, []);
+  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { name: "Memory Overview", href: "/memory", icon: "psychology" },
+    { name: "Connected Apps", href: "/connected", icon: "hub" },
+    { name: "Query Assistant", href: "/query", icon: "chat_bubble" },
+    { name: "API Settings", href: "/settings", icon: "settings" },
+    { name: "Live Tracking", href: "/live-tracking", icon: "sensors" },
+  ];
+
+  const NavContent = () => (
+    <>
+      <div className="flex items-center gap-3 px-2">
+        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-600/30">
+          B
+        </div>
+        <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+          Backboard
+        </h1>
+      </div>
+
+      <nav className="flex flex-col gap-1.5 mt-8">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`nav-link ${isActive ? "nav-link-active" : ""}`}
+            >
+              <span className="material-symbols-outlined opacity-80">{item.icon}</span>
+              <span className="font-medium">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto pt-6 border-t border-zinc-800/50">
+        <div className="px-2 py-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500" />
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">User</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Free Plan</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
-    <html lang="en">
-      <body>
-        <div className="min-h-screen flex">
-          <aside className="w-72 bg-white border-r p-4">
-            <h1 className="text-xl font-semibold mb-4">Backboard</h1>
-            <nav className="flex flex-col gap-2">
-              <Link
-                className="px-3 py-2 rounded hover:bg-gray-100"
-                href="/memory"
-              >
-                Memory Overview
-              </Link>
-              <Link
-                className="px-3 py-2 rounded hover:bg-gray-100"
-                href="/connected"
-              >
-                Connected Apps
-              </Link>
-              <Link
-                className="px-3 py-2 rounded hover:bg-gray-100"
-                href="/query"
-              >
-                Query
-              </Link>
-              <Link
-                className="px-3 py-2 rounded hover:bg-gray-100"
-                href="/settings"
-              >
-                API Settings
-              </Link>
-              <Link
-                className="px-3 py-2 rounded hover:bg-gray-100"
-                href="/live-tracking"
-              >
-                Live Tracking
-              </Link>
-            </nav>
+    <html lang="en" className="dark">
+      <head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+      </head>
+      <body className="antialiased">
+        <div className="relative min-h-screen flex text-zinc-100">
+          {/* Background decoration */}
+          <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+            <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 blur-[120px] rounded-full" />
+            <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] bg-purple-500/10 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-10%] left-[20%] w-[30%] h-[30%] bg-blue-500/10 blur-[120px] rounded-full" />
+          </div>
+
+          {/* Desktop Sidebar */}
+          <aside className="w-72 glass-card border-l-0 border-y-0 p-6 flex flex-col hidden md:flex">
+            <NavContent />
           </aside>
 
-          <main className="flex-1 p-6">{children}</main>
+          {/* Mobile Sidebar Overlay */}
+          {isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
+
+          {/* Mobile Sidebar */}
+          <aside className={`fixed top-0 left-0 bottom-0 w-72 glass-card border-l-0 border-y-0 p-6 flex flex-col z-50 transition-transform duration-300 md:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <NavContent />
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto bg-zinc-950/20">
+            <header className="h-16 border-b border-zinc-800/50 flex items-center justify-between px-6 bg-zinc-950/40 backdrop-blur-sm sticky top-0 z-10 md:hidden">
+              <div className="flex items-center gap-3 text-white">
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="p-2 -ml-2 hover:bg-zinc-800/50 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                </button>
+                <Link href="/" className="font-bold tracking-tight">Backboard</Link>
+              </div>
+            </header>
+            <div className="p-6 md:p-8 max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
         </div>
       </body>
     </html>
