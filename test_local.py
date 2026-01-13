@@ -9,11 +9,13 @@ import json
 
 BASE_URL = "http://localhost:8080"
 
+
 def print_section(title):
     """Print a section header."""
     print(f"\n{'=' * 60}")
     print(f"  {title}")
     print(f"{'=' * 60}\n")
+
 
 def test_root():
     """Test the root endpoint."""
@@ -25,6 +27,7 @@ def test_root():
     assert response.json()["status"] == "ok"
     print("✓ Root endpoint working!")
 
+
 def test_api_docs():
     """Test that API docs are available."""
     print_section("Testing API Documentation")
@@ -32,19 +35,22 @@ def test_api_docs():
     print(f"GET /docs → Status: {response.status_code}")
     print("✓ API documentation available at http://localhost:8080/docs")
 
+
 def main():
     """Run all tests."""
-    print("""
+    print(
+        """
     ╔════════════════════════════════════════════════════════════╗
     ║   Google Drive Integration - Local Test Suite             ║
     ║   McHacks Onboarding Assistant                            ║
     ╚════════════════════════════════════════════════════════════╝
-    """)
-    
+    """
+    )
+
     try:
         test_root()
         test_api_docs()
-        
+
         print_section("Test Summary")
         print("✓ All basic tests passed!")
         print("\nServer is running and ready for:")
@@ -54,16 +60,16 @@ def main():
         print("  - Document processing (/drive/process)")
         print("  - Polling (/drive/start-polling)")
         print("  - Document listing (/drive/documents)")
-        
+
         print("\nNext steps:")
         print("  1. Get a Backboard API key")
         print("  2. Set up Google Cloud credentials")
         print("  3. Run: python src/backend/drive_setup_example.py")
-        
+
         print("\n" + "=" * 60)
         print("✅ Server is functional and ready for integration!")
         print("=" * 60 + "\n")
-        
+
     except requests.exceptions.ConnectionError:
         print("\n❌ Error: Could not connect to server!")
         print("Please start the server first:")
@@ -72,9 +78,11 @@ def main():
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         return 1
-    
+
     return 0
+
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

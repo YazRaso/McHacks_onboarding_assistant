@@ -74,7 +74,7 @@ class DriveService:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self.credentials_path, SCOPES
                 )
-                self.creds = flow.run_local_server(port=0)
+                self.creds = flow.run_local_server(port=8080)
 
             # Save credentials for next time
             with open(self.token_path, "w") as token:

@@ -16,10 +16,12 @@ else:
     fernet = None
     print("Warning: ENCRYPTION_KEY not set. Encryption functions will not work.")
 
+
 def encrypt_api_key(api_key: str) -> str:
     if fernet is None:
         raise ValueError("ENCRYPTION_KEY not configured. Please set it in .env file.")
     return fernet.encrypt(api_key.encode()).decode()
+
 
 def decrypt_api_key(encrypted_key: str) -> str:
     if fernet is None:

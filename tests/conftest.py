@@ -1,6 +1,7 @@
 """
 Shared fixtures for tests.
 """
+
 import os
 import sys
 import sqlite3
@@ -10,13 +11,14 @@ from unittest.mock import patch, MagicMock
 from cryptography.fernet import Fernet
 
 # Add the backend directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src', 'backend'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "backend"))
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     """Setup test database path before any tests run."""
     import tempfile
+
     test_db = tempfile.mktemp(suffix=".db")
     os.environ["TEST_DB_NAME"] = test_db
     yield test_db
@@ -57,26 +59,33 @@ def temp_db(tmp_path):
     cur = con.cursor()
 
     # Create tables
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS clients (
             client_id TEXT PRIMARY KEY,
             api_key TEXT
         )
-    """)
-    cur.execute("""
+    """
+    )
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS assistants (
             assistant_id TEXT PRIMARY KEY,
             client_id TEXT
         )
-    """)
-    cur.execute("""
+    """
+    )
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS chats (
             chat_id TEXT PRIMARY KEY,
             channel_name TEXT,
             chat TEXT
         )
-    """)
-    cur.execute("""
+    """
+    )
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS drive_documents (
             file_id TEXT PRIMARY KEY,
             client_id TEXT,
@@ -87,7 +96,8 @@ def temp_db(tmp_path):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    """)
+    """
+    )
     con.commit()
     con.close()
 
@@ -103,10 +113,9 @@ def encryption_key():
 @pytest.fixture
 def mock_env(encryption_key):
     """Mock environment variables for testing."""
-    with patch.dict(os.environ, {
-        "ENCRYPTION_KEY": encryption_key,
-        "BOT_TOKEN": "test_bot_token"
-    }):
+    with patch.dict(
+        os.environ, {"ENCRYPTION_KEY": encryption_key, "BOT_TOKEN": "test_bot_token"}
+    ):
         yield
 
 
