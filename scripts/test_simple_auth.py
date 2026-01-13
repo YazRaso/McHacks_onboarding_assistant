@@ -34,17 +34,17 @@ try:
 
     creds = flow.run_local_server(port=8080)
 
-    print("\n✅ Authentication successful!")
-    print(f"✅ Token obtained!")
+    print("\n[OK] Authentication successful!")
+    print(f"[OK] Token obtained!")
 
     # Save token
     with open("src/backend/token.json", "w") as token:
         token.write(creds.to_json())
 
-    print("✅ Token saved to src/backend/token.json")
+    print("[OK] Token saved to src/backend/token.json")
 
 except Exception as e:
-    print(f"\n❌ Error: {e}")
+    print(f"\n[ERROR] Error: {e}")
     import traceback
 
     traceback.print_exc()

@@ -37,9 +37,9 @@ async def main():
                 params={"client_id": client_id, "api_key": backboard_api_key},
             )
             if response.status_code == 201:
-                print(f"✓ Client '{client_id}' created successfully")
+                print(f"OK Client '{client_id}' created successfully")
             elif response.status_code == 409:
-                print(f"✓ Client '{client_id}' already exists")
+                print(f"OK Client '{client_id}' already exists")
             else:
                 print(f"✗ Error creating client: {response.text}")
                 return
@@ -53,7 +53,7 @@ async def main():
         try:
             response = await client.post(f"{base_url}/drive/authenticate")
             if response.status_code == 201:
-                print("✓ Google Drive authentication successful")
+                print("OK Google Drive authentication successful")
             else:
                 print(f"✗ Error authenticating: {response.text}")
                 return
@@ -86,7 +86,7 @@ async def main():
                 )
                 if response.status_code == 201:
                     data = response.json()
-                    print(f"✓ Registered: {data.get('file_id')}")
+                    print(f"OK Registered: {data.get('file_id')}")
                     registered_count += 1
                 else:
                     print(f"✗ Failed to register {url}: {response.text}")
@@ -107,7 +107,7 @@ async def main():
             )
             if response.status_code == 201:
                 data = response.json()
-                print(f"✓ Polling started!")
+                print(f"OK Polling started!")
                 print(f"  - Monitoring {data['document_count']} document(s)")
                 print(f"  - Check interval: {data['interval']} seconds")
                 print("\nThe server is now monitoring your documents for changes.")
@@ -128,7 +128,7 @@ async def main():
             if response.status_code == 200:
                 data = response.json()
                 for doc in data["documents"]:
-                    print(f"\n📄 {doc['file_name']}")
+                    print(f"\n {doc['file_name']}")
                     print(f"   ID: {doc['file_id']}")
                     print(f"   Last Modified: {doc['last_modified']}")
                     print(
@@ -139,7 +139,7 @@ async def main():
         except Exception as e:
             print(f"Error: {e}")
 
-        print("\n✅ Setup complete! Your Drive integration is active.")
+        print("\n[OK] Setup complete! Your Drive integration is active.")
 
 
 if __name__ == "__main__":
