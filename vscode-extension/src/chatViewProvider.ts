@@ -25,20 +25,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(async data => {
+            console.log('Received message from webview:', data);
             switch (data.type) {
                 case 'sendMessage':
+                    console.log('Handling user message:', data.message);
                     await this.handleUserMessage(data.message);
                     break;
                 case 'openFile':
                     this.openFileAtLine(data.path, data.line);
                     break;
+                case 'webviewReady':
+                    console.log('Webview is ready, sending welcome message');
+                    this.sendWelcomeMessage();
+                    break;
             }
         });
 
-        this.sendWelcomeMessage();
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible && this.messages.length === 0) {
+                this.sendWelcomeMessage();
+            }
+        });
     }
 
     private async handleUserMessage(message: string) {
+        console.log('handleUserMessage called with:', message);
         const userMessage: ChatMessage = {
             role: 'user',
             content: message,
@@ -46,15 +57,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         };
 
         this.messages.push(userMessage);
+        console.log('Sending user message to webview');
         this._view?.webview.postMessage({
             type: 'addMessage',
             message: userMessage
         });
 
+        console.log('Showing typing indicator');
         this._view?.webview.postMessage({ type: 'showTyping' });
 
         try {
+            console.log('Getting response from backboard service');
             const response = await this.backboardService.sendMessage(message);
+            console.log('Got response:', response);
             this.messages.push(response);
             this._view?.webview.postMessage({ type: 'hideTyping' });
             this._view?.webview.postMessage({
@@ -62,6 +77,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 message: response
             });
         } catch (error) {
+            console.error('Error getting response:', error);
             this._view?.webview.postMessage({ type: 'hideTyping' });
             const errorMessage: ChatMessage = {
                 role: 'assistant',
@@ -105,10 +121,12 @@ How can I help you today?`,
     public sendMessageFromCommand(message: string) {
         if (this._view) {
             this._view.show?.(true);
-            this._view.webview.postMessage({
-                type: 'setInput',
-                message: message
-            });
+            setTimeout(() => {
+                this._view?.webview.postMessage({
+                    type: 'setInput',
+                    message: message
+                });
+            }, 100);
         }
     }
 
@@ -424,8 +442,13 @@ How can I help you today?`,
 
         function sendMessage() {
             const message = messageInput.value.trim();
-            if (!message) return;
+            console.log('Send button clicked, message:', message);
+            if (!message) {
+                console.log('Message is empty, not sending');
+                return;
+            }
 
+            console.log('Posting message to extension');
             vscode.postMessage({
                 type: 'sendMessage',
                 message: message
@@ -522,6 +545,12 @@ How can I help you today?`,
                     break;
                 case 'clearChat':
                     chatContainer.innerHTML = '';
+                    break;
+            }
+        });
+
+        // Notify extension that webview is ready
+        vscode.postMessage({ type: 'webviewReady' });
                     break;
             }
         });
