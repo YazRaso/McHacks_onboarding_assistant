@@ -41,6 +41,13 @@ export class BackboardService {
     }
 
     async sendMessage(message: string, context?: FileContext): Promise<ChatMessage> {
+        console.log('BackboardService.sendMessage called with:', {
+            message,
+            hasContext: !!context,
+            contextFileName: context?.fileName,
+            contextSize: context?.content.length
+        });
+        
         if (message.includes('@source')) {
             return this.handleSourceRequest(message);
         }
@@ -54,7 +61,13 @@ export class BackboardService {
         let response = '';
         
         if (context) {
-            response = `I can see you've attached **${context.fileName}** (${Math.round(context.content.length / 1024)}KB).\n\n`;
+            const lines = context.content.split('\n');
+            const preview = lines.slice(0, 5).join('\n');
+            response = `I can see you've attached **${context.fileName}**:\n`;
+            response += `- File size: ${Math.round(context.content.length / 1024)}KB\n`;
+            response += `- Total lines: ${lines.length}\n`;
+            response += `- First few lines:\n\`\`\`\n${preview}\n\`\`\`\n\n`;
+            response += `Now analyzing your question with this context...\n\n`;
         }
         
         if (message.toLowerCase().includes('meeting') || message.toLowerCase().includes('notes')) {

@@ -554,6 +554,22 @@ How can I help you today?`,
             font-size: 0.9em;
         }
 
+        pre {
+            background-color: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            overflow-x: auto;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
         strong {
             font-weight: 700;
         }
@@ -721,6 +737,9 @@ How can I help you today?`,
             }
 
             function formatMessage(text) {
+                text = text.replace(/\\\`\\\`\\\`([\\s\\S]*?)\\\`\\\`\\\`/g, function(match, code) {
+                    return '<pre><code>' + code + '</code></pre>';
+                });
                 text = text.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
                 text = text.replace(/\`(.+?)\`/g, '<code>$1</code>');
                 text = text.replace(/\\n/g, '<br>');
