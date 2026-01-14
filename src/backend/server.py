@@ -10,11 +10,13 @@ import asyncio
 import requests
 from backboard import BackboardClient
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
 from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
+from events import emit_event, event_stream
 
 app = FastAPI()
 
@@ -41,6 +43,40 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 @app.get("/")
 def root():
     return {"status": "ok"}
+
+
+# SSE endpoint for real-time event notifications
+@app.get("/events")
+async def events():
+    """
+    Server-Sent Events endpoint for real-time notifications.
+    Clients can subscribe to receive notifications when data is added from sources.
+    """
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
+@app.post("/events/emit")
+async def emit_event_endpoint(source: str, client_id: str = None):
+    """
+    Emit an event to all connected SSE clients.
+    Used by external services (like the Telegram bot) to notify the frontend.
+
+    Args:
+        source: The source of the data - must be one of: "drive", "repo", "telegram"
+        client_id: Optional client ID associated with the event
+    """
+    try:
+        await emit_event(source, client_id)
+        return {"status": "emitted", "source": source}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # create_client creates a client with an assistant provided a client with client_id does not already exist
@@ -245,6 +281,8 @@ async def process_drive_document(client_id: str, file_id: str, status_code=201):
 
     try:
         await drive_service.process_document(file_id, client_id)
+        # Emit event to notify frontend of drive update
+        await emit_event("drive", client_id)
         return {
             "status": "processed",
             "file_id": file_id,
@@ -532,6 +570,9 @@ async def git_webhook(request: Request):
             stream=True,
         ):
             pass  # Just consume the stream
+
+    # Emit event to notify frontend of repo update
+    await emit_event("repo", client_id)
 
     return {
         "status": "updated",

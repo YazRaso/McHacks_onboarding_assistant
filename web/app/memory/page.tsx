@@ -1,12 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SourceStatus from "../../components/SourceStatus";
-import { API } from "../../lib/api";
+import { API, DataEvent, EventSource as DataSource } from "../../lib/api";
 
 export default function MemoryPage() {
   const [status, setStatus] = useState<any>(null);
   const [activity, setActivity] = useState<any[]>([]);
+  const [activeSource, setActiveSource] = useState<DataSource | null>(null);
+
+  const handleEvent = useCallback((event: DataEvent) => {
+    // Show the active source animation
+    setActiveSource(event.source);
+
+    // Clear after 2 seconds
+    setTimeout(() => {
+      setActiveSource(null);
+    }, 2000);
+
+    // Refresh activity to show the new item
+    API.getActivity().then(setActivity).catch(console.error);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,7 +37,14 @@ export default function MemoryPage() {
     };
 
     fetchData();
-  }, []);
+
+    // Subscribe to real-time events
+    const unsubscribe = API.subscribeToEvents(handleEvent);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [handleEvent]);
 
   const drive = {
     connected: status?.drive?.connected ?? false,
@@ -55,6 +76,7 @@ export default function MemoryPage() {
         codebase={codebase}
         telegram={telegram}
         summarizer={summarizer}
+        activeSource={activeSource}
       />
 
       <div className="glass-card p-8 rounded-3xl">
