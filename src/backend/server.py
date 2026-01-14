@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException
 import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
+from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
 
 app = FastAPI()
 drive_service = None  # Will be initialized when needed
@@ -242,4 +243,104 @@ async def get_drive_documents(client_id: str):
         "client_id": client_id,
         "document_count": len(documents),
         "documents": documents,
+    }
+
+
+# Git related endpoints
+
+@app.post("/git/register")
+async def register_repository(client_id: str, repo_url: str, status_code=201):
+    """
+    Register a Git repository for tracking.
+
+    Args:
+        client_id: The client ID
+        repo_url: Git repository URL
+    """
+    
+    # Check client
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist")
+
+    # Check repository
+    repository = db.lookup_repository(repo_url)
+    if repository:
+        raise HTTPException(status_code=409, detail="Repository already registered")
+
+    # Add repository
+    db.add_repository(repo_url, client_id)
+
+    return {
+        "status": "registered",
+        "repo_url": repo_url,
+        "client_id": client_id,
+    }
+
+@app.post("/git/ingest")
+async def ingest_repository(client_id: str, repo_url: str, status_code=201):
+
+    # Check client
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist")
+
+    try:
+        owner, repo = parse_github_url(repo_url)
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=400, detail=f"Invalid GitHub URL: {repo_url}")
+    
+    if not owner or not repo:
+        raise HTTPException(status_code=400, detail=f"Could not parse owner/repo from URL: {repo_url}")
+
+    good_files = []
+
+    def process(path: str, depth: int = 0):
+        if depth > 50:
+            print(f"Max depth reached at {path}, skipping")
+            return
+        try:
+            items = fetch_repo_contents(owner, repo, path)
+        except Exception as e:
+            print(f"Error fetching contents at {path}: {e}")
+            return
+        for item in items:
+            if item["type"] == "dir":
+                if not should_skip_directory(item["name"]):
+                    process(item["path"], depth + 1)
+            elif item["type"] == "file":
+                if should_ingest_file(item["name"]):
+                    try:
+                        content = fetch_file_content(item["download_url"])
+                        if content:
+                            good_files.append((item["path"], content))
+                    except Exception as e:
+                        print(f"Error fetching file {item['name']}: {e}")
+
+    process("")
+
+    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
+    backboard_client = BackboardClient(api_key=decrypted_api_key)
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(
+            status_code=404, detail="No assistant found for this client!"
+        )
+    assistant_id = assistant["assistant_id"]
+    thread = await backboard_client.create_thread(assistant_id)
+    
+    for file_path, file_content in good_files: 
+        async for chunk in await backboard_client.add_message(
+            thread_id=thread.thread_id,
+            content=f"File: {file_path}\n\n{file_content}",
+            memory="Auto",
+            stream=True,
+        ):
+            pass
+
+    return {
+        "status": "completed",
+        "repo_url": repo_url,
+        "client_id": client_id,
+        "files_ingested": len(good_files),
     }
