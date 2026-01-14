@@ -101,10 +101,10 @@ Want me to pull specific messages or topics?`;
         } else if (message.toLowerCase().includes('help') || message.toLowerCase().includes('what can you')) {
             response = `I'm your Backboard Onboarding Assistant! I can help you with:
 
-📄 **Meeting Notes**: Query information from Google Drive documents
-🔀 **Git History**: Explore commits, file changes, and code evolution  
-💬 **Team Chats**: Search Telegram conversations and discussions
-🔍 **@source**: Type @source to see exact source files and line numbers
+**Meeting Notes**: Query information from Google Drive documents
+**Git History**: Explore commits, file changes, and code evolution
+**Team Chats**: Search Telegram conversations and discussions
+**@source**: Type @source to see exact source files and line numbers
 
 Try asking:
 • "What were the main topics in last week's meeting?"
@@ -197,9 +197,9 @@ async def add_thread(client_id: str, content: str, status_code=201):
                 content: `# McHacks Onboarding Assistant
 
 An intelligent onboarding assistant that integrates with:
-- 📄 Google Drive (meeting notes, documentation)
-- 🔀 Git repositories (code history, changes)
-- 💬 Telegram (team conversations)
+- Google Drive (meeting notes, documentation)
+- Git repositories (code history, changes)
+- Telegram (team conversations)
 
 All data is fed into the Backboard API for intelligent query answering.
 

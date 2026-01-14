@@ -103,12 +103,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private sendWelcomeMessage() {
     const welcomeMessage: ChatMessage = {
       role: "assistant",
-      content: `Welcome to Backboard Assistant! 👋
+      content: `Welcome to Backboard Assistant!
 
 I can help you explore your team's knowledge from:
-• 📄 Google Drive documents
-• 🔀 Git history and commits
-• 💬 Telegram conversations
+• Google Drive documents
+• Git history and commits
+• Telegram conversations
 
 **Quick tips:**
 • Type @source to see exact source files
@@ -599,7 +599,7 @@ How can I help you today?`,
     </div>
     <div id="attached-file" style="display: none;">
         <div class="attached-file-badge">
-            <span class="file-icon">📄</span>
+            <span class="file-icon">[file]</span>
             <span id="attached-file-name"></span>
             <button id="remove-file-btn" title="Remove file">×</button>
         </div>
@@ -715,7 +715,7 @@ How can I help you today?`,
                         
                         const icon = document.createElement('span');
                         icon.className = 'source-file-icon';
-                        icon.textContent = '📄';
+                        icon.textContent = '[file]';
                         sourceHeader.appendChild(icon);
                         
                         const pathSpan = document.createElement('span');

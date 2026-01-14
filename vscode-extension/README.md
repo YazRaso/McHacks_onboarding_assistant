@@ -4,19 +4,19 @@ An intelligent VS Code extension that connects to your Backboard onboarding assi
 
 ## Features
 
-### 💬 Interactive Chat Interface
+### Interactive Chat Interface
 
 - Beautiful chat UI directly in VS Code sidebar
 - Real-time responses from your onboarding assistant
 - Markdown formatting support
 - Message history
 
-### ⌨️ Keyboard Shortcuts
+### Keyboard Shortcuts
 
 - **Cmd+Shift+B** (Mac) / **Ctrl+Shift+B** (Windows/Linux): Open Backboard Chat
 - **Cmd+Shift+A** (Mac) / **Ctrl+Shift+A** (Windows/Linux): Quick Ask - popup input for fast questions
 
-### 🔍 @source Command
+### @source Command
 
 Type `@source` in your question to get exact source files with line numbers. The extension will show you:
 
@@ -25,7 +25,7 @@ Type `@source` in your question to get exact source files with line numbers. The
 - Code snippets
 - Click to open files directly in the editor
 
-### 🎯 Smart Responses
+### Smart Responses
 
 The assistant understands questions about:
 

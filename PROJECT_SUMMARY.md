@@ -6,7 +6,7 @@ I've reviewed the McHacks Onboarding Assistant codebase and implemented the Goog
 
 ---
 
-## 📋 Existing Codebase Analysis
+##  Existing Codebase Analysis
 
 ### Current Architecture
 
@@ -60,7 +60,7 @@ I've reviewed the McHacks Onboarding Assistant codebase and implemented the Goog
 
 ---
 
-## 🆕 Google Drive Integration Implementation
+##  Google Drive Integration Implementation
 
 ### New Branch: `feature/drive-content-extraction`
 
@@ -178,7 +178,7 @@ google-auth==2.4.6
 
 ---
 
-## 🔄 How It Works: Drive Integration Flow
+##  How It Works: Drive Integration Flow
 
 ### Setup Phase
 
@@ -204,23 +204,23 @@ google-auth==2.4.6
 ### Data Flow
 
 ```
-Google Drive → drive_service.py → Backboard API
-                      ↓
+Google Drive  drive_service.py  Backboard API
+                      
               database (cache + hash)
 ```
 
 ---
 
-## 🎯 Your Project Vision
+##  Your Project Vision
 
 ### Current Capabilities
 
-✅ Telegram message context  
-✅ Meeting notes from Drive (NEW)  
-⏳ Code context from GitHub (TODO)  
-⏳ Website dashboard (TODO)  
-⏳ VS Code extension (TODO)  
-⏳ Sticky notes feature (TODO)
+ Telegram message context  
+ Meeting notes from Drive (NEW)  
+ Code context from GitHub (TODO)  
+ Website dashboard (TODO)  
+ VS Code extension (TODO)  
+ Sticky notes feature (TODO)
 
 ### Why This Approach?
 
@@ -238,14 +238,14 @@ Let AI (Backboard) understand the "why" behind code, not just the "what."
 
 ### Sticky Notes Feature (Future)
 
-Casual notes → AI refinement → Proper documentation
+Casual notes  AI refinement  Proper documentation
 
 - Developer writes: "changed this bc the other way was slow"
 - AI generates: "Modified implementation to optimize performance..."
 
 ---
 
-## 🚀 Next Steps
+##  Next Steps
 
 ### Immediate (Drive Integration)
 
@@ -303,15 +303,15 @@ Casual notes → AI refinement → Proper documentation
 
 ---
 
-## 🔐 Security Considerations
+##  Security Considerations
 
 ### Current Security
 
-✅ API keys encrypted at rest (Fernet)  
-✅ Environment variables for secrets  
-✅ Read-only Drive access  
-✅ OAuth2 for authentication  
-✅ Credentials in `.gitignore`
+ API keys encrypted at rest (Fernet)  
+ Environment variables for secrets  
+ Read-only Drive access  
+ OAuth2 for authentication  
+ Credentials in `.gitignore`
 
 ### Production Recommendations
 
@@ -324,40 +324,40 @@ Casual notes → AI refinement → Proper documentation
 
 ---
 
-## 📊 File Structure After Changes
+##  File Structure After Changes
 
 ```
 McHacks_onboarding_assistant/
-├── src/
-│   ├── backend/
-│   │   ├── bot.py                    # Telegram integration
-│   │   ├── server.py                 # FastAPI server (UPDATED)
-│   │   ├── db.py                     # Database layer (UPDATED)
-│   │   ├── encryption.py             # Security module
-│   │   ├── get_key.py                # Key generation
-│   │   ├── drive_service.py          # NEW: Drive integration
-│   │   ├── drive_setup_example.py    # NEW: Setup script
-│   │   ├── requirements_bot.txt      # Telegram deps
-│   │   └── requirements_drive.txt    # NEW: Drive deps
-│   └── services/
-│       └── place_holder.txt
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_bot.py
-│   ├── test_db.py
-│   ├── test_encryption.py
-│   ├── test_server.py
-│   └── test_drive_service.py         # NEW: Drive tests
-├── DRIVE_INTEGRATION.md              # NEW: Documentation
-├── LICENSE
-├── pytest.ini
-└── .gitignore                        # UPDATED
+ src/
+    backend/
+       bot.py                    # Telegram integration
+       server.py                 # FastAPI server (UPDATED)
+       db.py                     # Database layer (UPDATED)
+       encryption.py             # Security module
+       get_key.py                # Key generation
+       drive_service.py          # NEW: Drive integration
+       drive_setup_example.py    # NEW: Setup script
+       requirements_bot.txt      # Telegram deps
+       requirements_drive.txt    # NEW: Drive deps
+    services/
+        place_holder.txt
+ tests/
+    __init__.py
+    conftest.py
+    test_bot.py
+    test_db.py
+    test_encryption.py
+    test_server.py
+    test_drive_service.py         # NEW: Drive tests
+ DRIVE_INTEGRATION.md              # NEW: Documentation
+ LICENSE
+ pytest.ini
+ .gitignore                        # UPDATED
 ```
 
 ---
 
-## 💡 Key Insights from Code Review
+##  Key Insights from Code Review
 
 ### What's Working Well
 
@@ -382,11 +382,11 @@ The codebase follows a **pragmatic MVP approach**:
 - Working over perfect
 - Iterate quickly
 
-Perfect for a hackathon! ✨
+Perfect for a hackathon! 
 
 ---
 
-## 🎓 Learning Points
+##  Learning Points
 
 ### Why These Technologies?
 
@@ -405,7 +405,7 @@ Perfect for a hackathon! ✨
 
 ---
 
-## 📝 Commit Summary
+##  Commit Summary
 
 **Branch**: `feature/drive-content-extraction`  
 **Commit**: `feat: Add Google Drive integration for meeting notes extraction`
@@ -425,7 +425,7 @@ Perfect for a hackathon! ✨
 
 ---
 
-## ✅ Checklist for Production
+##  Checklist for Production
 
 Before deploying:
 
@@ -450,4 +450,4 @@ Let me know if you want me to:
 4. Add more tests
 5. Refactor any existing code
 
-You're on the right track with this project! 🚀
+You're on the right track with this project! 

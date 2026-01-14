@@ -37,7 +37,7 @@ ENCRYPTION_KEY=your_encryption_key_here
 2. Create new project
 3. Enable "Google Drive API"
 4. Create OAuth 2.0 credentials (Desktop app)
-5. Download as `credentials.json` → put in `src/backend/`
+5. Download as `credentials.json`  put in `src/backend/`
 
 ### 4. Start Server
 
@@ -98,19 +98,19 @@ curl "http://localhost:8000/drive/documents?client_id=test"
 
 ### "Credentials file not found"
 
-→ Download from Google Cloud Console
+ Download from Google Cloud Console
 
 ### "Client does not exist"
 
-→ Create client first: `POST /client`
+ Create client first: `POST /client`
 
 ### "No documents registered"
 
-→ Register docs: `POST /drive/register`
+ Register docs: `POST /drive/register`
 
 ### Authentication keeps failing
 
-→ Delete `token.json` and re-authenticate
+ Delete `token.json` and re-authenticate
 
 ## Next Steps
 
@@ -121,38 +121,38 @@ curl "http://localhost:8000/drive/documents?client_id=test"
 ## Architecture Diagram
 
 ```
-┌─────────────────┐
-│  Google Drive   │
-│   (Meetings)    │
-└────────┬────────┘
-         │
-         ↓ (OAuth2)
-┌─────────────────┐
-│  drive_service  │ ← Polls every N seconds
-│      .py        │
-└────────┬────────┘
-         │
-         ├─→ Compute hash (change detection)
-         │
-         ├─→ Store in database
-         │
-         └─→ Send to Backboard API
-              │
-              ↓
-         ┌────────────┐
-         │  Backboard │
-         │   Memory   │
-         └────────────┘
+
+  Google Drive   
+   (Meetings)    
+
+         
+          (OAuth2)
+
+  drive_service    Polls every N seconds
+      .py        
+
+         
+          Compute hash (change detection)
+         
+          Store in database
+         
+          Send to Backboard API
+              
+              
+         
+           Backboard 
+            Memory   
+         
 ```
 
 ## Features
 
-✅ Automatic change detection  
-✅ Multiple document support  
-✅ Configurable polling  
-✅ Manual processing  
-✅ Content caching  
-✅ OAuth token persistence
+ Automatic change detection  
+ Multiple document support  
+ Configurable polling  
+ Manual processing  
+ Content caching  
+ OAuth token persistence
 
 ## Limits & Considerations
 
@@ -183,13 +183,13 @@ black src/backend/drive_service.py
 
 ## Support
 
-- 📖 Full docs: `DRIVE_INTEGRATION.md`
-- 🔍 Project summary: `PROJECT_SUMMARY.md`
-- 🐛 Issues: Check server logs
-- 💬 Questions: See existing code comments
+-  Full docs: `DRIVE_INTEGRATION.md`
+-  Project summary: `PROJECT_SUMMARY.md`
+-  Issues: Check server logs
+-  Questions: See existing code comments
 
 ---
 
-**You're all set!** 🚀
+**You're all set!** 
 
 The Drive integration is now monitoring your documents and feeding context to your onboarding assistant.

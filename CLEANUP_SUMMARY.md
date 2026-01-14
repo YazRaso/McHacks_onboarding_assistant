@@ -2,7 +2,7 @@
 
 ## Changes Made
 
-### ✅ File Structure Reorganization
+###  File Structure Reorganization
 
 **Created:**
 
@@ -11,7 +11,7 @@
   - Moved `test_drive_auth.py`
   - Moved `test_simple_auth.py`
   - Moved `test_local.py`
-  - Moved `drive_setup_example.py` → `drive_example.py`
+  - Moved `drive_setup_example.py`  `drive_example.py`
   - Added `scripts/README.md` with documentation
 
 **Removed:**
@@ -27,7 +27,7 @@
 - Created unified `requirements.txt` in project root
 - All dependencies now in one place with clear comments
 
-### 📝 Documentation Updates
+###  Documentation Updates
 
 **Created:**
 
@@ -54,7 +54,7 @@
   - IDE files
   - Logs
 
-### 🔧 Code Improvements
+###  Code Improvements
 
 **`src/backend/drive_service.py`:**
 
@@ -75,58 +75,58 @@
 - Now reads from .env file
 - Better error handling
 
-### 🗂️ Final Project Structure
+###  Final Project Structure
 
 ```
 McHacks_onboarding_assistant/
-├── .env                        # Your credentials (gitignored)
-├── .env.example               # Template for .env
-├── .gitignore                 # Comprehensive ignore rules
-├── README.md                  # Main documentation
-├── CONTRIBUTING.md            # Developer guide
-├── LICENSE                    # MIT License
-├── requirements.txt           # All Python dependencies
-├── pytest.ini                 # Pytest configuration
-│
-├── src/
-│   ├── backend/
-│   │   ├── server.py          # FastAPI application
-│   │   ├── drive_service.py   # Google Drive integration
-│   │   ├── db.py              # Database operations
-│   │   ├── encryption.py      # API key encryption
-│   │   ├── get_key.py         # Encryption key management
-│   │   ├── bot.py             # Telegram bot (future)
-│   │   ├── demo.db            # SQLite database (gitignored)
-│   │   ├── credentials.json   # OAuth creds (gitignored)
-│   │   └── token.json         # OAuth token (gitignored)
-│   └── services/
-│       └── place_holder.txt
-│
-├── tests/                     # Unit tests
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_server.py
-│   ├── test_drive_service.py
-│   ├── test_db.py
-│   ├── test_encryption.py
-│   └── test_bot.py
-│
-├── scripts/                   # Example & test scripts
-│   ├── README.md              # Scripts documentation
-│   ├── test_complete_integration.py
-│   ├── test_drive_auth.py
-│   ├── test_simple_auth.py
-│   ├── test_local.py
-│   └── drive_example.py
-│
-└── docs/                      # Original documentation
-    ├── QUICKSTART.md
-    ├── DRIVE_INTEGRATION.md
-    ├── PROJECT_SUMMARY.md
-    └── TEST_RESULTS.md
+ .env                        # Your credentials (gitignored)
+ .env.example               # Template for .env
+ .gitignore                 # Comprehensive ignore rules
+ README.md                  # Main documentation
+ CONTRIBUTING.md            # Developer guide
+ LICENSE                    # MIT License
+ requirements.txt           # All Python dependencies
+ pytest.ini                 # Pytest configuration
+
+ src/
+    backend/
+       server.py          # FastAPI application
+       drive_service.py   # Google Drive integration
+       db.py              # Database operations
+       encryption.py      # API key encryption
+       get_key.py         # Encryption key management
+       bot.py             # Telegram bot (future)
+       demo.db            # SQLite database (gitignored)
+       credentials.json   # OAuth creds (gitignored)
+       token.json         # OAuth token (gitignored)
+    services/
+        place_holder.txt
+
+ tests/                     # Unit tests
+    __init__.py
+    conftest.py
+    test_server.py
+    test_drive_service.py
+    test_db.py
+    test_encryption.py
+    test_bot.py
+
+ scripts/                   # Example & test scripts
+    README.md              # Scripts documentation
+    test_complete_integration.py
+    test_drive_auth.py
+    test_simple_auth.py
+    test_local.py
+    drive_example.py
+
+ docs/                      # Original documentation
+     QUICKSTART.md
+     DRIVE_INTEGRATION.md
+     PROJECT_SUMMARY.md
+     TEST_RESULTS.md
 ```
 
-### 🎯 Key Improvements
+###  Key Improvements
 
 1. **Better Organization:**
 
@@ -152,7 +152,7 @@ McHacks_onboarding_assistant/
    - Consolidated requirements
    - Fixed import paths
 
-### ✅ Ready for Production
+###  Ready for Production
 
 The project is now:
 
@@ -162,7 +162,7 @@ The project is now:
 - Easy to set up and contribute to
 - Ready for deployment or presentation
 
-### 🚀 Next Steps
+###  Next Steps
 
 1. **Commit changes:**
 
@@ -186,10 +186,10 @@ The project is now:
    git push origin main
    ```
 
-### 📊 Statistics
+###  Statistics
 
 - **Files Removed:** 7 (duplicates, cache)
 - **Files Created:** 5 (README, CONTRIBUTING, etc.)
 - **Files Moved:** 5 (scripts reorganized)
 - **Lines of Documentation:** ~500+
-- **Dependencies Consolidated:** 2 files → 1 file
+- **Dependencies Consolidated:** 2 files  1 file

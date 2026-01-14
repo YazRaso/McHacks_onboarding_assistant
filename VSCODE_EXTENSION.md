@@ -1,10 +1,10 @@
 # VS Code Extension Complete!
 
-## 🎉 What We Built
+##  What We Built
 
 A fully functional VS Code extension for the Backboard Onboarding Assistant with an interactive chat interface, keyboard shortcuts, and the innovative @source command!
 
-## 📦 Extension Features
+##  Extension Features
 
 ### Core Functionality
 
@@ -21,7 +21,7 @@ A fully functional VS Code extension for the Backboard Onboarding Assistant with
 - **Cmd+Shift+B** (Mac) / **Ctrl+Shift+B** (Win/Linux) - Open Backboard Chat
 - **Cmd+Shift+A** (Mac) / **Ctrl+Shift+A** (Win/Linux) - Quick Ask popup
 
-#### 3. **@source Command** ⭐ Star Feature
+#### 3. **@source Command**  Star Feature
 
 - Type `@source` in any question
 - Returns clickable source files with:
@@ -46,33 +46,33 @@ Context-aware answers for:
 - `Backboard: Ask Question` - Quick input popup
 - `Backboard: Clear Chat History` - Resets conversation
 
-## 🗂️ File Structure
+##  File Structure
 
 ```
 vscode-extension/
-├── src/
-│   ├── extension.ts           # Entry point & activation
-│   ├── chatViewProvider.ts    # Chat UI with webview HTML/CSS/JS
-│   └── backboardService.ts    # API service & mock responses
-├── dist/                      # Compiled JavaScript (generated)
-│   ├── extension.js
-│   ├── chatViewProvider.js
-│   └── backboardService.js
-├── resources/
-│   └── icon.svg               # Custom Backboard icon
-├── .vscode/
-│   ├── launch.json            # F5 debug config
-│   ├── tasks.json             # Build tasks
-│   └── extensions.json        # Recommended extensions
-├── package.json               # Extension manifest
-├── tsconfig.json              # TypeScript config
-├── README.md                  # Full documentation
-├── SETUP.md                   # Setup instructions
-├── DEMO_GUIDE.md              # Feature walkthrough
-└── BUILD_SUMMARY.md           # Build details
+ src/
+    extension.ts           # Entry point & activation
+    chatViewProvider.ts    # Chat UI with webview HTML/CSS/JS
+    backboardService.ts    # API service & mock responses
+ dist/                      # Compiled JavaScript (generated)
+    extension.js
+    chatViewProvider.js
+    backboardService.js
+ resources/
+    icon.svg               # Custom Backboard icon
+ .vscode/
+    launch.json            # F5 debug config
+    tasks.json             # Build tasks
+    extensions.json        # Recommended extensions
+ package.json               # Extension manifest
+ tsconfig.json              # TypeScript config
+ README.md                  # Full documentation
+ SETUP.md                   # Setup instructions
+ DEMO_GUIDE.md              # Feature walkthrough
+ BUILD_SUMMARY.md           # Build details
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Run the Extension
 
@@ -106,7 +106,7 @@ Show me recent commits
 # Get source files with code!
 ```
 
-## 💡 Usage Examples
+##  Usage Examples
 
 ### Example 1: Meeting Query
 
@@ -117,9 +117,9 @@ Show me recent commits
 ```
 Based on the meeting notes from Google Drive, I found several important discussions:
 
-• June 2024 meetings with Jerry and Henri covering project architecture
-• Weekly standups with the team (Tina, Karan, Dexuan, Veronika)
-• Latest sync from January 2026 discussing the McHacks integration
+ June 2024 meetings with Jerry and Henri covering project architecture
+ Weekly standups with the team (Tina, Karan, Dexuan, Veronika)
+ Latest sync from January 2026 discussing the McHacks integration
 
 Would you like me to dive deeper into any specific meeting?
 ```
@@ -133,15 +133,15 @@ Would you like me to dive deeper into any specific meeting?
 ```
 Looking at the Git history, I can see:
 
-• Recent commits focused on Drive integration and Backboard API setup
-• Feature branch: drive-content-extraction merged to main
-• Major refactoring for code cleanup and emoji removal
-• Test coverage improvements across backend components
+ Recent commits focused on Drive integration and Backboard API setup
+ Feature branch: drive-content-extraction merged to main
+ Major refactoring for code cleanup and emoji removal
+ Test coverage improvements across backend components
 
 Need details on a specific commit or file changes?
 ```
 
-### Example 3: @source Magic ⭐
+### Example 3: @source Magic 
 
 **You:** `@source How does authentication work?`
 
@@ -155,7 +155,7 @@ I found 3 relevant source files. Click on any file below to view the code.
 
 Then displays 3 clickable cards:
 
-**📄 src/backend/server.py** (Lines 67-92)
+** src/backend/server.py** (Lines 67-92)
 
 ```python
 @app.post("/messages/send")
@@ -166,7 +166,7 @@ async def add_thread(client_id: str, content: str, status_code=201):
     ...
 ```
 
-**📄 src/backend/drive_service.py** (Lines 145-167)
+** src/backend/drive_service.py** (Lines 145-167)
 
 ```python
 async def process_document(self, file_id: str, client_id: str):
@@ -175,20 +175,20 @@ async def process_document(self, file_id: str, client_id: str):
         ...
 ```
 
-**📄 README.md** (Lines 1-15)
+** README.md** (Lines 1-15)
 
 ```markdown
 # McHacks Onboarding Assistant
 
 An intelligent onboarding assistant that integrates with:
 
-- 📄 Google Drive (meeting notes, documentation)
+-  Google Drive (meeting notes, documentation)
   ...
 ```
 
-**Click any card → File opens at exact line! 🎯**
+**Click any card  File opens at exact line! **
 
-## ⚙️ Configuration
+##  Configuration
 
 Access via VS Code Settings (Cmd+,):
 
@@ -200,7 +200,7 @@ Access via VS Code Settings (Cmd+,):
 }
 ```
 
-## 🎨 UI Highlights
+##  UI Highlights
 
 - **Theme Integration**: Works with any VS Code theme
 - **Animations**: Smooth message slide-ins, typing dots
@@ -209,7 +209,7 @@ Access via VS Code Settings (Cmd+,):
 - **Auto-scroll**: Conversation stays at bottom
 - **Responsive**: Adapts to sidebar width
 
-## 📊 Technical Details
+##  Technical Details
 
 - **Language**: TypeScript
 - **Framework**: VS Code Extension API
@@ -218,11 +218,11 @@ Access via VS Code Settings (Cmd+,):
   - axios (HTTP client)
   - @types/vscode
   - TypeScript 5.3.0
-- **Compilation**: `tsc` → JavaScript in `dist/`
+- **Compilation**: `tsc`  JavaScript in `dist/`
 - **Lines of Code**: ~800
 - **Load Time**: < 100ms
 
-## 🎯 Demo Flow
+##  Demo Flow
 
 1. **Open Extension**: Press F5 in VS Code
 2. **Activate Chat**: Cmd+Shift+B in Extension Development Host
@@ -231,14 +231,14 @@ Access via VS Code Settings (Cmd+,):
 5. **Click File**: Opens editor at exact line
 6. **Quick Ask**: Cmd+Shift+A for popup input
 
-## 🔄 Next Steps
+##  Next Steps
 
 ### Immediate (Works Now)
 
-- ✅ Chat with mock responses
-- ✅ @source shows mock files
-- ✅ All keyboard shortcuts functional
-- ✅ Beautiful UI with animations
+-  Chat with mock responses
+-  @source shows mock files
+-  All keyboard shortcuts functional
+-  Beautiful UI with animations
 
 ### Short-term (Connect to Backend)
 
@@ -256,23 +256,23 @@ Access via VS Code Settings (Cmd+,):
 - [ ] Custom themes
 - [ ] File upload capability
 
-## 📚 Documentation
+##  Documentation
 
 - **README.md**: Full feature documentation
 - **SETUP.md**: Installation and setup guide
 - **DEMO_GUIDE.md**: Step-by-step feature walkthrough
 - **BUILD_SUMMARY.md**: Build process and verification
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 **Extension doesn't activate?**
 
-- Check Debug Console (Help → Toggle Developer Tools)
+- Check Debug Console (Help  Toggle Developer Tools)
 - Verify compilation: `npm run compile`
 
 **Chat not showing?**
 
-- Command Palette → "Backboard: Open Chat"
+- Command Palette  "Backboard: Open Chat"
 - Check Activity Bar for Backboard icon
 
 **Source files don't open?**
@@ -280,20 +280,20 @@ Access via VS Code Settings (Cmd+,):
 - Ensure workspace folder is open
 - Files must exist in workspace
 
-## 🏆 Success Metrics
+##  Success Metrics
 
-- ✅ TypeScript compiled without errors
-- ✅ All 3 commands registered
-- ✅ 2 keyboard shortcuts working
-- ✅ Chat UI renders beautifully
-- ✅ @source shows clickable files
-- ✅ Mock responses are intelligent
-- ✅ Theme integration perfect
-- ✅ Animations smooth
-- ✅ F5 debug works
-- ✅ Documentation complete
+-  TypeScript compiled without errors
+-  All 3 commands registered
+-  2 keyboard shortcuts working
+-  Chat UI renders beautifully
+-  @source shows clickable files
+-  Mock responses are intelligent
+-  Theme integration perfect
+-  Animations smooth
+-  F5 debug works
+-  Documentation complete
 
-## 🎬 Demo Script (2 minutes)
+##  Demo Script (2 minutes)
 
 **Opening (15s):**
 
@@ -301,21 +301,21 @@ Access via VS Code Settings (Cmd+,):
 
 **Feature 1 - Chat (30s):**
 
-> Press Cmd+Shift+B → "Instant access to an intelligent assistant that knows about your Drive docs, Git history, and team conversations."
+> Press Cmd+Shift+B  "Instant access to an intelligent assistant that knows about your Drive docs, Git history, and team conversations."
 
 **Feature 2 - Questions (30s):**
 
-> Type: "What meetings have you seen?" → "It recalls months of meeting notes with specific details."
+> Type: "What meetings have you seen?"  "It recalls months of meeting notes with specific details."
 
 **Feature 3 - @source (45s):**
 
-> Type: "@source How does authentication work?" → "Here's the magic: @source shows you the EXACT code." → Click file → "And we jump right to the implementation. No searching, instant context."
+> Type: "@source How does authentication work?"  "Here's the magic: @source shows you the EXACT code."  Click file  "And we jump right to the implementation. No searching, instant context."
 
 **Closing (15s):**
 
 > "This is how we're making onboarding seamless - knowledge at your fingertips, right where you code."
 
-## 📸 Screenshots Needed
+##  Screenshots Needed
 
 1. Welcome screen with chat open
 2. Question and intelligent response
@@ -354,7 +354,7 @@ npm install -g vsce
 vsce package             # Creates .vsix file
 ```
 
-## 🌟 Key Innovations
+##  Key Innovations
 
 1. **@source Command**: Unique feature showing exact source code locations
 2. **One-Click Navigation**: From chat to code in milliseconds
@@ -364,18 +364,18 @@ vsce package             # Creates .vsix file
 
 ---
 
-## Status: ✅ Complete & Ready to Demo!
+## Status:  Complete & Ready to Demo!
 
 The VS Code extension is fully functional with:
 
-- Interactive chat interface ✅
-- Keyboard shortcuts ✅
-- @source command with code display ✅
-- Smart mock responses ✅
-- Beautiful UI ✅
-- Complete documentation ✅
-- Debug configuration ✅
+- Interactive chat interface 
+- Keyboard shortcuts 
+- @source command with code display 
+- Smart mock responses 
+- Beautiful UI 
+- Complete documentation 
+- Debug configuration 
 
-**Press F5 and explore!** 🚀
+**Press F5 and explore!** 
 
-Built for McHacks 2026 🏆
+Built for McHacks 2026 

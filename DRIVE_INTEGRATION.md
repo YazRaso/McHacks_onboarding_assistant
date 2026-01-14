@@ -4,12 +4,12 @@ This module provides Google Drive integration for the McHacks Onboarding Assista
 
 ## Features
 
-- 🔐 **OAuth2 Authentication** - Secure authentication with Google Drive API
-- 🔄 **Polling Mechanism** - Automatically detects changes in Drive documents
-- 📝 **Content Extraction** - Extracts text from Google Docs
-- 🧠 **Memory Integration** - Feeds content to Backboard API for AI memory
-- 💾 **Change Detection** - Uses content hashing to avoid redundant processing
-- 📊 **Multi-Document Support** - Monitor multiple documents simultaneously
+-  **OAuth2 Authentication** - Secure authentication with Google Drive API
+-  **Polling Mechanism** - Automatically detects changes in Drive documents
+-  **Content Extraction** - Extracts text from Google Docs
+-  **Memory Integration** - Feeds content to Backboard API for AI memory
+-  **Change Detection** - Uses content hashing to avoid redundant processing
+-  **Multi-Document Support** - Monitor multiple documents simultaneously
 
 ## Setup Instructions
 
@@ -262,11 +262,11 @@ CREATE TABLE drive_documents (
 
 ## Security Considerations
 
-- ✅ OAuth2 tokens are stored locally in `token.json`
-- ✅ API keys are encrypted before storage
-- ✅ Read-only access to Drive (cannot modify or delete files)
-- ⚠️ Keep `credentials.json` and `token.json` secure
-- ⚠️ Add both files to `.gitignore`
+-  OAuth2 tokens are stored locally in `token.json`
+-  API keys are encrypted before storage
+-  Read-only access to Drive (cannot modify or delete files)
+-  Keep `credentials.json` and `token.json` secure
+-  Add both files to `.gitignore`
 
 ## Troubleshooting
 
