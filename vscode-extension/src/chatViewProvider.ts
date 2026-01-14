@@ -153,13 +153,25 @@ How can I help you today?`,
     }
 
     const document = editor.document;
+    const selection = editor.selection;
     const fileName = vscode.workspace.asRelativePath(document.uri);
     
-    this.currentContext = {
-      fileName: fileName,
-      filePath: document.uri.fsPath,
-      content: document.getText(),
-    };
+    if (!selection.isEmpty) {
+      const selectedText = document.getText(selection);
+      this.currentContext = {
+        fileName: fileName,
+        filePath: document.uri.fsPath,
+        content: selectedText,
+        lineStart: selection.start.line + 1,
+        lineEnd: selection.end.line + 1,
+      };
+    } else {
+      this.currentContext = {
+        fileName: fileName,
+        filePath: document.uri.fsPath,
+        content: document.getText(),
+      };
+    }
 
     this._view?.webview.postMessage({
       type: "fileAttached",
@@ -767,7 +779,14 @@ How can I help you today?`,
                         chatContainer.innerHTML = '';
                         break;
                     case 'fileAttached':
-                        attachedFileName.textContent = message.context.fileName;
+                        var displayName = message.context.fileName;
+                        if (message.context.lineStart && message.context.lineEnd) {
+                            displayName += ':L' + message.context.lineStart;
+                            if (message.context.lineStart !== message.context.lineEnd) {
+                                displayName += '-L' + message.context.lineEnd;
+                            }
+                        }
+                        attachedFileName.textContent = displayName;
                         attachedFileDiv.style.display = 'block';
                         break;
                     case 'contextRemoved':

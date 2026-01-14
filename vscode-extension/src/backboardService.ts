@@ -20,6 +20,8 @@ export interface FileContext {
     fileName: string;
     filePath: string;
     content: string;
+    lineStart?: number;
+    lineEnd?: number;
 }
 
 export class BackboardService {
@@ -41,13 +43,6 @@ export class BackboardService {
     }
 
     async sendMessage(message: string, context?: FileContext): Promise<ChatMessage> {
-        console.log('BackboardService.sendMessage called with:', {
-            message,
-            hasContext: !!context,
-            contextFileName: context?.fileName,
-            contextSize: context?.content.length
-        });
-        
         if (message.includes('@source')) {
             return this.handleSourceRequest(message);
         }
@@ -63,9 +58,16 @@ export class BackboardService {
         if (context) {
             const lines = context.content.split('\n');
             const preview = lines.slice(0, 5).join('\n');
-            response = `I can see you've attached **${context.fileName}**:\n`;
-            response += `- File size: ${Math.round(context.content.length / 1024)}KB\n`;
-            response += `- Total lines: ${lines.length}\n`;
+            
+            if (context.lineStart && context.lineEnd) {
+                response = `I can see you've selected lines ${context.lineStart}-${context.lineEnd} from **${context.fileName}**:\n`;
+                response += `- Selected lines: ${lines.length}\n`;
+            } else {
+                response = `I can see you've attached **${context.fileName}**:\n`;
+                response += `- File size: ${Math.round(context.content.length / 1024)}KB\n`;
+                response += `- Total lines: ${lines.length}\n`;
+            }
+            
             response += `- First few lines:\n\`\`\`\n${preview}\n\`\`\`\n\n`;
             response += `Now analyzing your question with this context...\n\n`;
         }
