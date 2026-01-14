@@ -12,30 +12,66 @@ import db
 import encryption
 
 
-# Simple system prompts for Backboard tools
-TOOL_SYSTEM_PROMPTS = {
-    "create_file": """Tool: create_file
-Creates a file in the user's workspace. Extract the filename from the user's query and generate appropriate content based on the filename and context.
-Parameters: filename (extract from query)""",
-    
-    "get_recent_context": """Tool: get_recent_context
-Retrieves recent activity from Telegram, Drive, and GitHub within the last X hours.
-Parameters: hours (optional, default 24)""",
-    
-    "generate_mermaid_graph": """Tool: generate_mermaid_graph
-Generates a Mermaid flowchart showing the lineage of a topic/feature across Telegram discussions, Drive docs, and GitHub code.
-Parameters: topic (extract from user's query)"""
-}
+# Backboard tool definitions in JSON schema format
+BACKBOARD_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "create_file",
+            "description": "Creates a file in the user's workspace. Generates appropriate content based on the filename and context.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "The file path where the file should be created (e.g., 'README.md', 'docs/ONBOARDING.md')"
+                    }
+                },
+                "required": ["filename"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_recent_context",
+            "description": "Retrieves recent activity from Telegram, Drive, and GitHub within the last X hours.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "hours": {
+                        "type": "integer",
+                        "description": "Number of hours to look back (default: 24)",
+                        "default": 24
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_mermaid_graph",
+            "description": "Generates a Mermaid flowchart showing the lineage of a topic/feature across Telegram discussions, Drive docs, and GitHub code.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "description": "The topic or feature name to generate a graph for"
+                    }
+                },
+                "required": ["topic"]
+            }
+        }
+    }
+]
 
 
-def get_tool_system_prompt(tool_name: str) -> Optional[str]:
-    """Get system prompt for a tool."""
-    return TOOL_SYSTEM_PROMPTS.get(tool_name)
-
-
-def get_all_tool_prompts() -> Dict[str, str]:
-    """Get all tool system prompts."""
-    return TOOL_SYSTEM_PROMPTS
+def get_backboard_tools() -> List[Dict[str, Any]]:
+    """Get all Backboard tool definitions."""
+    return BACKBOARD_TOOLS
 
 
 def detect_tool_invocation(content: str) -> Optional[str]:

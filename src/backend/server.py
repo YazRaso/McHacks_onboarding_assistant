@@ -15,7 +15,12 @@ import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
 from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
-from tools import detect_tool_invocation, execute_tool, handle_create_file, handle_get_recent_context, handle_generate_mermaid_graph, get_all_tool_prompts
+from tools import (
+    get_backboard_tools,
+    handle_create_file,
+    handle_get_recent_context,
+    handle_generate_mermaid_graph
+)
 
 app = FastAPI()
 
@@ -54,10 +59,12 @@ async def create_client(client_id: str, api_key: str, status_code=201):
         raise HTTPException(status_code=409, detail="Client already exists!")
     # Connect to backboard
     backboard_client = BackboardClient(api_key=api_key)
-    # Create assistant
+    # Create assistant with tools
+    tools = get_backboard_tools()
     assistant = await backboard_client.create_assistant(
         name="Test Assistant",
-        description="An assistant designed to understand your code",
+        system_prompt="You are a helpful assistant designed to understand code and help with onboarding. You can create files, retrieve recent context, and generate visualizations.",
+        tools=tools
     )
     # Create entries for db
     encrypted_api_key = encryption.encrypt_api_key(api_key)
@@ -74,6 +81,8 @@ async def create_client(client_id: str, api_key: str, status_code=201):
 # add_thread uses client_ids assistant and prompts backboard with content
 @app.post("/messages/send")
 async def add_thread(client_id: str, content: str, status_code=201):
+    import json
+    
     client = db.lookup_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client does not exist!")
@@ -87,36 +96,93 @@ async def add_thread(client_id: str, content: str, status_code=201):
         )
     assistant_id = assistant["assistant_id"]
     
-    # Check for tool invocation
-    tool_name = detect_tool_invocation(content)
-    if tool_name:
-        # Execute the tool
-        tool_result = await execute_tool(
-            tool_name, client_id, content, backboard_client, assistant_id
-        )
-        
-        # Return tool result in a structured format
-        return {
-            "type": "tool_result",
-            "tool": tool_name,
-            "result": tool_result
-        }
-    
-    # Normal message flow - query Backboard
+    # Create thread and send message
     thread = await backboard_client.create_thread(assistant_id)
-    output = []
-    sources = []
-    async for chunk in await backboard_client.add_message(
+    response = await backboard_client.add_message(
         thread_id=thread.thread_id,
         content=content,
         memory="auto",
-        stream=True
-    ):
-        print(chunk)
-        if chunk['type'] == 'content_streaming':
-            output.append(chunk['content'])
-    output = "".join(output)
-    return output
+        stream=False
+    )
+    
+    # Check if Backboard requires tool calls
+    if hasattr(response, 'status') and getattr(response, 'status', None) == "REQUIRES_ACTION":
+        tool_calls = getattr(response, 'tool_calls', None)
+        if tool_calls:
+            tool_outputs = []
+            
+            # Process each tool call
+            for tc in tool_calls:
+                if not hasattr(tc, 'function'):
+                    continue
+                    
+                tool_name = tc.function.name
+                args = getattr(tc.function, 'parsed_arguments', {})
+                
+                try:
+                    # Execute the appropriate tool
+                    if tool_name == "create_file":
+                        filename = args.get("filename", "docs/ONBOARDING.md")
+                        result = await handle_create_file(
+                            client_id, filename, backboard_client, assistant_id, user_query=content
+                        )
+                        tool_outputs.append({
+                            "tool_call_id": tc.id,
+                            "output": json.dumps(result)
+                        })
+                        
+                    elif tool_name == "get_recent_context":
+                        hours = args.get("hours", 24)
+                        result = await handle_get_recent_context(
+                            client_id, backboard_client, assistant_id, hours
+                        )
+                        tool_outputs.append({
+                            "tool_call_id": tc.id,
+                            "output": json.dumps(result)
+                        })
+                        
+                    elif tool_name == "generate_mermaid_graph":
+                        topic = args.get("topic", "feature lineage")
+                        result = await handle_generate_mermaid_graph(
+                            client_id, topic, backboard_client, assistant_id
+                        )
+                        tool_outputs.append({
+                            "tool_call_id": tc.id,
+                            "output": json.dumps(result)
+                        })
+                    else:
+                        # Unknown tool - return error
+                        tool_outputs.append({
+                            "tool_call_id": tc.id,
+                            "output": json.dumps({"error": f"Unknown tool: {tool_name}"})
+                        })
+                except Exception as e:
+                    # Tool execution failed - return error
+                    print(f"Error executing tool {tool_name}: {e}")
+                    tool_outputs.append({
+                        "tool_call_id": tc.id,
+                        "output": json.dumps({"error": f"Tool execution failed: {str(e)}"})
+                    })
+            
+            # Submit tool outputs back to Backboard
+            if tool_outputs:
+                try:
+                    run_id = getattr(response, 'run_id', None)
+                    if not run_id:
+                        raise ValueError("Response missing run_id")
+                    
+                    final_response = await backboard_client.submit_tool_outputs(
+                        thread_id=thread.thread_id,
+                        run_id=run_id,
+                        tool_outputs=tool_outputs
+                    )
+                    return getattr(final_response, 'content', str(final_response))
+                except Exception as e:
+                    print(f"Error submitting tool outputs: {e}")
+                    return {"error": f"Failed to submit tool outputs: {str(e)}"}
+    
+    # Normal response (no tool calls needed)
+    return getattr(response, 'content', str(response))
 
 # query sends backboards response along with sources of information
 @app.post("/messages/query")
@@ -678,8 +744,8 @@ async def generate_mermaid_graph_tool(
 @app.get("/tools/definitions")
 async def get_tool_definitions():
     """
-    Get all tool system prompts/definitions for Backboard.
+    Get all tool definitions for Backboard.
     """
     return {
-        "tools": get_all_tool_prompts()
+        "tools": get_backboard_tools()
     }
