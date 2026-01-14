@@ -38,7 +38,7 @@ export default function Home() {
     <div className="space-y-10 py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="space-y-4">
         <div className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-medium text-indigo-400">
-          ✨ Welcome back to Backboard
+          Welcome back to Backboard
         </div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
           Command Center
@@ -54,26 +54,75 @@ export default function Home() {
           <Link
             key={card.href}
             href={card.href}
-            className={`group p-8 rounded-3xl glass-card relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-zinc-700 hover:bg-zinc-800/40`}
+            className="
+        group relative overflow-hidden
+        p-8 rounded-3xl
+        border border-zinc-800
+        bg-zinc-900/60
+        transition-all duration-300
+        hover:scale-[1.02]
+        hover:border-blue-500/40
+        hover:bg-blue-950/40
+      "
           >
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
             <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl mb-6 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                <span className="material-symbols-outlined text-4xl">{card.icon}</span>
+              <div
+                className="
+            w-14 h-14 rounded-2xl
+            bg-zinc-900
+            border border-zinc-800
+            flex items-center justify-center
+            text-3xl mb-6
+            shadow-xl
+            group-hover:scale-110
+            transition-transform duration-300
+          "
+              >
+                <span className="material-symbols-outlined text-4xl text-blue-400">
+                  {card.icon}
+                </span>
               </div>
-              <h3 className="text-2xl font-bold mb-3 group-hover:text-indigo-400 transition-colors">
+
+              <h3
+                className="
+            text-2xl font-bold mb-3
+            text-zinc-100
+            group-hover:text-blue-400
+            transition-colors
+          "
+              >
                 {card.title}
               </h3>
-              <p className="text-zinc-400 leading-relaxed group-hover:text-zinc-300 transition-colors">
+
+              <p
+                className="
+            text-zinc-400 leading-relaxed
+            group-hover:text-zinc-300
+            transition-colors
+          "
+              >
                 {card.description}
               </p>
-              <div className="mt-6 flex items-center text-xs font-semibold uppercase tracking-widest text-indigo-500 opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
-                Lauch Module <span className="ml-2">→</span>
+
+              <div
+                className="
+            mt-6 flex items-center
+            text-xs font-semibold uppercase tracking-widest
+            text-blue-500
+            opacity-0
+            transform -translate-x-2
+            group-hover:opacity-100
+            group-hover:translate-x-0
+            transition-all duration-300
+          "
+              >
+                Launch Module <span className="ml-2">→</span>
               </div>
             </div>
           </Link>
         ))}
       </div>
+
 
       <footer className="p-8 rounded-3xl glass-card flex flex-col md:flex-row items-center justify-between gap-6 border-zinc-800/30">
         <div className="flex items-center gap-4">

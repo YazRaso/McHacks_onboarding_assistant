@@ -24,14 +24,15 @@ export default function RootLayout({
 
   const NavContent = () => (
     <>
-      <div className="flex items-center gap-3 px-2">
-        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-600/30">
+      <Link href="/" className="flex items-center gap-3 px-2">
+        <div className="w-8 h-8 bg-zinc-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-zinc-600/30">
           B
         </div>
         <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
           Backboard
         </h1>
-      </div>
+      </Link>
+
 
       <nav className="flex flex-col gap-1.5 mt-8">
         {navItems.map((item) => {
