@@ -47,84 +47,57 @@ export class BackboardService {
             return this.handleSourceRequest(message);
         }
 
-        return this.getMockResponse(message, context);
+        return this.queryBackend(message, context);
     }
 
-    private async getMockResponse(message: string, context?: FileContext): Promise<ChatMessage> {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        let response = '';
-        
-        if (context) {
-            const lines = context.content.split('\n');
-            const preview = lines.slice(0, 5).join('\n');
-            
-            if (context.lineStart && context.lineEnd) {
-                response = `I can see you've selected lines ${context.lineStart}-${context.lineEnd} from **${context.fileName}**:\n`;
-                response += `- Selected lines: ${lines.length}\n`;
-            } else {
-                response = `I can see you've attached **${context.fileName}**:\n`;
-                response += `- File size: ${Math.round(context.content.length / 1024)}KB\n`;
-                response += `- Total lines: ${lines.length}\n`;
+    private async queryBackend(message: string, context?: FileContext): Promise<ChatMessage> {
+        try {
+            // Build the query with optional context
+            let fullMessage = message;
+            if (context) {
+                const contextInfo = context.lineStart && context.lineEnd
+                    ? `[Context from ${context.fileName} lines ${context.lineStart}-${context.lineEnd}]:\n${context.content}\n\n`
+                    : `[Context from ${context.fileName}]:\n${context.content}\n\n`;
+                fullMessage = contextInfo + message;
             }
-            
-            response += `- First few lines:\n\`\`\`\n${preview}\n\`\`\`\n\n`;
-            response += `Now analyzing your question with this context...\n\n`;
+
+            // Call the backend /messages/query endpoint which returns (response, sources)
+            const response = await this.apiClient.post('/messages/query', null, {
+                params: {
+                    client_id: this.clientId,
+                    content: fullMessage
+                }
+            });
+
+            // Backend returns a tuple [response, sources]
+            const [content, sources] = response.data;
+
+            // Convert sources to SourceFile format if available
+            const sourceFiles: SourceFile[] = sources?.map((source: string) => ({
+                path: 'memory',
+                content: source
+            })) || [];
+
+            return {
+                role: 'assistant',
+                content: content,
+                timestamp: Date.now(),
+                sources: sourceFiles.length > 0 ? sourceFiles : undefined
+            };
+        } catch (error: any) {
+            console.error('Backend query failed:', error);
+
+            // Return a helpful error message
+            const errorMessage = error.response?.status === 404
+                ? 'Client not found. Please check your configuration in VS Code settings.'
+                : `Failed to connect to the backend. Make sure the server is running.\n\nError: ${error.message}`;
+
+            return {
+                role: 'assistant',
+                content: errorMessage,
+                timestamp: Date.now()
+            };
         }
-        
-        if (message.toLowerCase().includes('meeting') || message.toLowerCase().includes('notes')) {
-            response = `Based on the meeting notes from Google Drive, I found several important discussions:
-
-• June 2024 meetings with Jerry and Henri covering project architecture
-• Weekly standups with the team (Tina, Karan, Dexuan, Veronika)
-• Latest sync from January 2026 discussing the McHacks integration
-
-Would you like me to dive deeper into any specific meeting?`;
-        } else if (message.toLowerCase().includes('git') || message.toLowerCase().includes('commit')) {
-            response = `Looking at the Git history, I can see:
-
-• Recent commits focused on Drive integration and Backboard API setup
-• Feature branch: drive-content-extraction merged to main
-• Major refactoring for code cleanup and emoji removal
-• Test coverage improvements across backend components
-
-Need details on a specific commit or file changes?`;
-        } else if (message.toLowerCase().includes('telegram') || message.toLowerCase().includes('chat')) {
-            response = `From Telegram conversations, the team has been discussing:
-
-• Real-time integration patterns for the onboarding assistant
-• OAuth flow improvements for Google Drive
-• VS Code extension ideas (that's what we're building now!)
-• Deployment strategies for the demo
-
-Want me to pull specific messages or topics?`;
-        } else if (message.toLowerCase().includes('help') || message.toLowerCase().includes('what can you')) {
-            response = `I'm your Backboard Onboarding Assistant! I can help you with:
-
-**Meeting Notes**: Query information from Google Drive documents
-**Git History**: Explore commits, file changes, and code evolution
-**Team Chats**: Search Telegram conversations and discussions
-**@source**: Type @source to see exact source files and line numbers
-
-Try asking:
-• "What were the main topics in last week's meeting?"
-• "Show me recent commits on the drive integration"
-• "What did the team discuss about deployment?"`;
-        } else {
-            response = `I understand you're asking about: "${message}"
-
-Based on the connected data sources (Drive docs, Git history, Telegram), here's what I found:
-
-This is a mock response for testing. The actual Backboard API will provide intelligent answers based on your team's documentation, code changes, and conversations.
-
-**Tip**: Use @source in your question to see the exact source files I'm referencing!`;
-        }
-
-        return {
-            role: 'assistant',
-            content: response,
-            timestamp: Date.now()
-        };
     }
 
     private async handleSourceRequest(message: string): Promise<ChatMessage> {

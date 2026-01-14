@@ -6,6 +6,7 @@ The program requires a bot token, you can get this through telegram using botfat
 
 from dotenv import load_dotenv
 import os
+import httpx
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -18,8 +19,25 @@ import db
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+SERVER_URL = os.getenv("SERVER_URL", "http://localhost:8000")
 
-# log_thread saves telegram messages with metadate to db, message is sent to backboard as consequence  
+
+async def emit_telegram_event(client_id: str = None):
+    """
+    Emit a telegram event by calling the server's /events/emit endpoint.
+    This notifies the frontend that telegram data has been received.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            params = {"source": "telegram"}
+            if client_id:
+                params["client_id"] = client_id
+            await client.post(f"{SERVER_URL}/events/emit", params=params)
+    except Exception as e:
+        print(f"Failed to emit telegram event: {e}")
+
+
+# log_thread saves telegram messages with metadate to db, message is sent to backboard as consequence
 async def log_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -29,6 +47,8 @@ async def log_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread = f"{sender.username}: {msg.text}"
     # For testing purposes print(f"Thread to be added: {thread}, with id: {chat.id}, channel name: {chat.title}")
     db.create_thread(chat.id, msg.chat, thread)
+    # Notify frontend of new telegram message
+    await emit_telegram_event()
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 

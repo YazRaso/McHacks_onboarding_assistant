@@ -1,4 +1,12 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export type EventSource = "drive" | "repo" | "telegram";
+
+export interface DataEvent {
+    source: EventSource;
+    timestamp: string;
+    client_id?: string;
+}
 
 export const API = {
     async getStatus(clientId: string = "default_user") {
@@ -33,5 +41,25 @@ export const API = {
         });
         if (!res.ok) throw new Error("Failed to register document");
         return res.json();
+    },
+
+    subscribeToEvents(onEvent: (event: DataEvent) => void): () => void {
+        const eventSource = new EventSource(`${BASE_URL}/events`);
+
+        eventSource.onmessage = (e) => {
+            try {
+                const data = JSON.parse(e.data) as DataEvent;
+                onEvent(data);
+            } catch (err) {
+                console.error("Failed to parse event:", err);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error("SSE connection error:", err);
+        };
+
+        // Return cleanup function
+        return () => eventSource.close();
     }
 };
