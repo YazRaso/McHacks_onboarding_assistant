@@ -10,12 +10,23 @@ import asyncio
 import requests
 from backboard import BackboardClient
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
 from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
 
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For demo purposes, allowing all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 drive_service = None  # Will be initialized when needed
 
 # GitHub token for creating webhooks (set via environment variable)
@@ -40,10 +51,6 @@ async def create_client(client_id: str, api_key: str, status_code=201):
     # Return if client already exists
     if client:
         raise HTTPException(status_code=409, detail="Client already exists!")
-    # Encrypt api key
-    encrypted_api_key = encryption.encrypt_api_key(api_key)
-    # Create entry for new client
-    db.create_client(client_id, encrypted_api_key)
     # Connect to backboard
     backboard_client = BackboardClient(api_key=api_key)
     # Create assistant
@@ -51,8 +58,10 @@ async def create_client(client_id: str, api_key: str, status_code=201):
         name="Test Assistant",
         description="An assistant designed to understand your code",
     )
-    # Create entry for new assistant
+    # Create entries for db
+    encrypted_api_key = encryption.encrypt_api_key(api_key)
     db.create_assistant(assistant.assistant_id, client_id)
+    db.create_client(client_id, encrypted_api_key)
 
     return {
         "status": "created",
@@ -78,21 +87,76 @@ async def add_thread(client_id: str, content: str, status_code=201):
     assistant_id = assistant["assistant_id"]
     thread = await backboard_client.create_thread(assistant_id)
     output = []
+    sources = []
     async for chunk in await backboard_client.add_message(
         thread_id=thread.thread_id,
         content=content,
-        memory="Auto",  # Enable memory - automatically saves relevant info
-        stream=True,
+        memory="auto",
+        stream=True
     ):
-        if chunk["type"] == "content_streaming":
-            output.append(chunk["content"])
-    return "".join(output)
+        print(chunk)
+        if chunk['type'] == 'content_streaming':
+            output.append(chunk['content'])
+    output = "".join(output)
+    return output
 
+# query sends backboards response along with sources of information
+@app.post("/messages/query")
+async def query(client_id: str, content: str, status_code=201):
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist!")
+    # For simplicity, we assume that each client has one assistant
+    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
+    backboard_client = BackboardClient(api_key=decrypted_api_key)
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(
+            status_code=404, detail="No assistant found for this client!"
+        )
+    assistant_id = assistant["assistant_id"]
+    thread = await backboard_client.create_thread(assistant_id)
+    output = []
+    sources = []
+    async for chunk in await backboard_client.add_message(
+        thread_id=thread.thread_id,
+        content=content,
+        memory="auto",
+        stream=True
+    ):
+        print(chunk)
+        if chunk['type'] == 'content_streaming':
+            output.append(chunk['content'])
+            print(chunk['content'])
+      #  elif chunk['type'] == 'memory_retrieved':
+      #      print(chunk['memories'])
+      #      sources.append(chunk['memories'][0]['memory'])
+        elif chunk['type'] == 'run_ended' and chunk.get("retrieved_memories", None):
+            memories = chunk['retrieved_memories']
+            for memory in memories:
+                sources.append(memory['memory'])
+        #elif chunk['type'] == 'run_ended' and chunk.get('memory_operation_id', None):
+        #    print(chunk['memory_operation_id'])
+        #    memory_operation_id = chunk['memory_operation_id']
+    #memory = await backboard_client.add_memory(assistant_id=assistant_id, content=content)
+    #memory_id = memory["memory_id"]
+    # for debugging
+    # print(f"Memory id is {memory_id}")
+    # goal is to check what methods the object has
+    # methods = [m for m in dir(backboard_client) if callable(getattr(backboard_client, m))]
+    # memories = await backboard_client.get_memories(assistant_id=assistant_id)
+    # print(f"All memories {memories}")
+    # for method in methods:
+    #    print(f"Method found! {method}")
+    #await backboard_client.get_memory(assistant_id=assistant_id, memory_id=memory_id)
+    output = "".join(output)
+    print(sources)
+    return (output, sources)
 
-@app.post("/messages/summarize")
-async def summarize(client_id: str, status_code=201):
-    content = "Summarize all the memories that you have"
-    return await add_thread(client_id=client_id, content=content)
+#@app.post("/messages/summarize")
+#async def summarize(client_id: str, status_code=201):
+#    content = "Summarize all the memories that you have"
+#    return await add_thread(client_id=client_id, content=content)
 
 
 # Drive-related endpoints
@@ -254,11 +318,8 @@ async def get_drive_documents(client_id: str):
         "documents": documents,
     }
 
-
-# Git related endpoints
-
-@app.post("/git/register")
-async def register_repository(client_id: str, repo_url: str, status_code=201):
+@app.get("/system/status")
+async def get_system_status(client_id: str = "default_user"):
     """
     Register a Git repository for tracking.
     Automatically creates a webhook on the repo if GITHUB_TOKEN and WEBHOOK_URL are set.
@@ -266,9 +327,8 @@ async def register_repository(client_id: str, repo_url: str, status_code=201):
     Args:
         client_id: The client ID
         repo_url: Git repository URL
+    Get the connection status of all services.
     """
-    
-    # Check client
     client = db.lookup_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client does not exist")
@@ -323,59 +383,54 @@ async def register_repository(client_id: str, repo_url: str, status_code=201):
         "client_id": client_id,
         "webhook_created": webhook_created,
         "webhook_error": webhook_error,
+    drive_docs = db.get_all_drive_documents_for_client(client_id)
+    
+    # Check if telegram bot is running (simplified placeholder)
+    # In a real app, this would check a process or heartbeat
+    telegram_connected = False 
+    
+    return {
+        "client": {
+            "id": client_id,
+            "exists": client is not None,
+            "has_api_key": client is not None and client.get("api_key") is not None
+        },
+        "drive": {
+            "connected": len(drive_docs) > 0,
+            "document_count": len(drive_docs),
+            "lastUpdated": drive_docs[0]["updated_at"] if drive_docs else None
+        },
+        "telegram": {
+            "connected": telegram_connected,
+            "lastUpdated": None
+        },
+        "codebase": {
+            "connected": True, # Placeholder for demo
+            "lastUpdated": "2026-01-12 10:00 UTC" # Placeholder
+        }
     }
 
-@app.post("/git/ingest")
-async def ingest_repository(client_id: str, repo_url: str, status_code=201):
-
-    # Check client
-    client = db.lookup_client(client_id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client does not exist")
-
-    try:
-        owner, repo = parse_github_url(repo_url)
-    except (ValueError, TypeError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid GitHub URL: {repo_url}")
+@app.get("/activity")
+async def get_activity(client_id: str = "default_user", limit: int = 10):
+    """
+    Get recent activity across all sources.
+    """
+    # Get recent drive updates
+    docs = db.get_all_drive_documents_for_client(client_id)
+    drive_activity = [
+        {
+            "source": "Drive",
+            "title": f"Document '{doc['file_name']}' synced",
+            "summary": f"Extracted context from {doc['file_name']}",
+            "time": doc["updated_at"],
+            "color": "emerald"
+        }
+        for doc in docs
+    ]
     
-    if not owner or not repo:
-        raise HTTPException(status_code=400, detail=f"Could not parse owner/repo from URL: {repo_url}")
-
-    good_files = []
-
-    def process(path: str, depth: int = 0):
-        if depth > 50:
-            print(f"Max depth reached at {path}, skipping")
-            return
-        try:
-            items = fetch_repo_contents(owner, repo, path)
-        except Exception as e:
-            print(f"Error fetching contents at {path}: {e}")
-            return
-        for item in items:
-            if item["type"] == "dir":
-                if not should_skip_directory(item["name"]):
-                    process(item["path"], depth + 1)
-            elif item["type"] == "file":
-                if should_ingest_file(item["name"]):
-                    try:
-                        content = fetch_file_content(item["download_url"])
-                        if content:
-                            good_files.append((item["path"], content))
-                    except Exception as e:
-                        print(f"Error fetching file {item['name']}: {e}")
-
-    process("")
-
-    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
-    backboard_client = BackboardClient(api_key=decrypted_api_key)
-    assistant = db.lookup_assistant(client_id)
-    if not assistant:
-        raise HTTPException(
-            status_code=404, detail="No assistant found for this client!"
-        )
-    assistant_id = assistant["assistant_id"]
-    thread = await backboard_client.create_thread(assistant_id)
+    # Get recent chat updates (simplified)
+    # In a real app we'd query the chats table for timestamps
+    # For now, let's keep it simple or use mocks if table empty
     
     for file_path, file_content in good_files: 
         async for chunk in await backboard_client.add_message(
@@ -489,3 +544,4 @@ async def webhook(request: Request):
         "files_updated": len(changed_files),
         "files": [f[0] for f in changed_files],
     }
+    return sorted(drive_activity, key=lambda x: x["time"], reverse=True)[:limit]
