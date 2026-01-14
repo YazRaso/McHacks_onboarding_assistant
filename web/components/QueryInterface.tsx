@@ -46,7 +46,7 @@ export default function QueryInterface() {
       <div className="p-4 border-b border-zinc-800/50 bg-zinc-900/30 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-sm font-bold uppercase tracking-wider text-zinc-400 font-mono">Backboard-LLM-v4.0</span>
+          <span className="text-sm font-bold uppercase tracking-wider text-zinc-400 font-mono">Status</span>
         </div>
         <div className="text-xs text-zinc-500">
           {messages.length} messages in memory
@@ -59,7 +59,7 @@ export default function QueryInterface() {
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40">
             <div className="material-symbols-outlined text-6xl">smart_toy</div>
             <div className="max-w-xs space-y-2">
-              <h4 className="font-bold">Neural Assistant Ready</h4>
+              <h4 className="font-bold">Assistant Ready</h4>
               <p className="text-xs">Ask anything about your team's documents, meeting notes, or codebase history.</p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function QueryInterface() {
           <button
             onClick={send}
             disabled={loading || !prompt.trim()}
-            className="btn-primary h-11 w-11 p-0 flex items-center justify-center rounded-2xl shrink-0"
+            className="btn-primary h-11 w-11 p-0 flex items-center justify-center rounded-full shrink-0"
           >
             <span className="material-symbols-outlined">send</span>
           </button>

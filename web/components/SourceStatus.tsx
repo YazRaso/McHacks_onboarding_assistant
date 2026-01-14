@@ -64,7 +64,7 @@ export default function SourceStatus({
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-zinc-400">Memory Sync Status</span>
               <span
-                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${summarizer?.status === "running"
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${summarizer?.status === "running"
                   ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
                   : summarizer?.status === "ok"
                     ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"

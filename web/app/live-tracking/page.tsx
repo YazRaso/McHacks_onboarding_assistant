@@ -31,6 +31,13 @@ export default function LiveTrackingPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Check if the script is already loaded
+    if (typeof window !== "undefined" && (window as any).Globe) {
+      initializeGlobe();
+    }
+  }, []);
+
   const initializeGlobe = () => {
     // Gen random data with modern colors
     const N = 24;
@@ -49,6 +56,9 @@ export default function LiveTrackingPage() {
     if (typeof window !== "undefined" && (window as any).Globe) {
       const globeElement = document.getElementById("globeViz");
       if (globeElement) {
+        // Clear previous instance if any (though Globe.gl usually appends)
+        globeElement.innerHTML = '';
+
         new (window as any).Globe(globeElement)
           .globeImageUrl(
             "//cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg"

@@ -60,7 +60,7 @@ export default function ConnectedClient() {
         </div>
         <p className="text-sm text-zinc-500 leading-relaxed max-w-2xl">
           In a production environment, these nodes are bridged via industrial-standard OAuth2.0 flows and real-time webhook subscribers
-          to continuously stream delta updates into the Backboard neural memory system.
+          to continuously stream delta updates into the Backboard memory system.
         </p>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button className="btn-secondary py-3 text-sm">Configure Webhooks</button>
