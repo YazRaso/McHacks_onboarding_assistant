@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
+from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
 
 app = FastAPI()
 
