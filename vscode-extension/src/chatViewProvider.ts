@@ -84,6 +84,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         type: "addMessage",
         message: response,
       });
+
+      // Handle tool results (e.g., create_file)
+      if ((response as any).toolResult?.type === 'create_file') {
+        await this.handleCreateFile((response as any).toolResult);
+      }
     } catch (error) {
       this._view?.webview.postMessage({ type: "hideTyping" });
       const errorMessage: ChatMessage = {
@@ -112,6 +117,9 @@ I can help you explore your team's knowledge from:
 
 **Quick tips:**
 • Type @source to see exact source files
+• Type @"create_file" to create onboarding docs
+• Type @"get_recent_context" to catch up on recent activity
+• Type @"generate_mermaid_graph" to visualize feature lineage
 • Use Cmd+Shift+A for quick questions
 • Ask about meetings, code changes, or team discussions
 
@@ -182,6 +190,51 @@ How can I help you today?`,
   private removeContext() {
     this.currentContext = null;
     this._view?.webview.postMessage({ type: "contextRemoved" });
+  }
+
+  private async handleCreateFile(toolResult: any) {
+    try {
+      const filename = toolResult.filename;
+      const content = toolResult.content;
+
+      if (!filename || !content) {
+        vscode.window.showErrorMessage('File creation failed: missing filename or content');
+        return;
+      }
+
+      // Get workspace folder
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+      }
+
+      const workspaceRoot = workspaceFolders[0].uri;
+      const fileUri = vscode.Uri.joinPath(workspaceRoot, filename);
+
+      // Create directory if needed
+      const dirUri = vscode.Uri.joinPath(workspaceRoot, filename.split('/').slice(0, -1).join('/'));
+      if (filename.includes('/')) {
+        try {
+          await vscode.workspace.fs.createDirectory(dirUri);
+        } catch (error) {
+          // Directory might already exist, ignore
+        }
+      }
+
+      // Write file
+      const encoder = new TextEncoder();
+      const fileData = encoder.encode(content);
+      await vscode.workspace.fs.writeFile(fileUri, fileData);
+
+      // Open the file
+      const document = await vscode.workspace.openTextDocument(fileUri);
+      await vscode.window.showTextDocument(document);
+
+      vscode.window.showInformationMessage(`File created: ${filename}`);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to create file: ${error}`);
+    }
   }
 
   private openFileAtLine(filePath: string, line?: number) {

@@ -15,6 +15,7 @@ import encryption
 import db
 from drive_service import DriveService, extract_file_id_from_url
 from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
+from tools import detect_tool_invocation, execute_tool, handle_create_file, handle_get_recent_context, handle_generate_mermaid_graph
 
 app = FastAPI()
 
@@ -85,6 +86,23 @@ async def add_thread(client_id: str, content: str, status_code=201):
             status_code=404, detail="No assistant found for this client!"
         )
     assistant_id = assistant["assistant_id"]
+    
+    # Check for tool invocation
+    tool_name = detect_tool_invocation(content)
+    if tool_name:
+        # Execute the tool
+        tool_result = await execute_tool(
+            tool_name, client_id, content, backboard_client, assistant_id
+        )
+        
+        # Return tool result in a structured format
+        return {
+            "type": "tool_result",
+            "tool": tool_name,
+            "result": tool_result
+        }
+    
+    # Normal message flow - query Backboard
     thread = await backboard_client.create_thread(assistant_id)
     output = []
     sources = []
@@ -539,3 +557,90 @@ async def git_webhook(request: Request):
         "files_updated": len(changed_files),
         "files": [f[0] for f in changed_files],
     }
+
+
+# Tool endpoints
+
+@app.post("/tools/create_file")
+async def create_file_tool(
+    client_id: str,
+    filename: str,
+    content: str,
+    status_code=201
+):
+    """
+    Tool endpoint: create_file
+    Creates a new file in the user's workspace.
+    
+    This endpoint is called by the frontend when the LLM requests file creation.
+    The actual file creation happens in the VS Code extension or web frontend.
+    """
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist!")
+    
+    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
+    backboard_client = BackboardClient(api_key=decrypted_api_key)
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(status_code=404, detail="No assistant found!")
+    
+    result = await handle_create_file(
+        client_id, filename, content, backboard_client, assistant["assistant_id"]
+    )
+    
+    return result
+
+
+@app.post("/tools/get_recent_context")
+async def get_recent_context_tool(
+    client_id: str,
+    hours: int = 24,
+    status_code=200
+):
+    """
+    Tool endpoint: get_recent_context
+    Retrieves RAG chunks ingested within the last X hours, grouped by source.
+    """
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist!")
+    
+    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
+    backboard_client = BackboardClient(api_key=decrypted_api_key)
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(status_code=404, detail="No assistant found!")
+    
+    result = await handle_get_recent_context(
+        client_id, hours, backboard_client, assistant["assistant_id"]
+    )
+    
+    return result
+
+
+@app.post("/tools/generate_mermaid_graph")
+async def generate_mermaid_graph_tool(
+    client_id: str,
+    topic: str,
+    status_code=200
+):
+    """
+    Tool endpoint: generate_mermaid_graph
+    Generates a Mermaid.js syntax string that maps the lineage of a feature.
+    """
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist!")
+    
+    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
+    backboard_client = BackboardClient(api_key=decrypted_api_key)
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(status_code=404, detail="No assistant found!")
+    
+    result = await handle_generate_mermaid_graph(
+        client_id, topic, backboard_client, assistant["assistant_id"]
+    )
+    
+    return result
