@@ -51,7 +51,7 @@
       "activitybar": [
         {
           "id": "backboard-sidebar",
-          "title": "Backboard Assistant",
+          "title": "ROB",
           "icon": "resources/icon.svg"
         }
       ]

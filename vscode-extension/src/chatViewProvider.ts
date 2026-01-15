@@ -103,20 +103,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private sendWelcomeMessage() {
     const welcomeMessage: ChatMessage = {
       role: "assistant",
-      content: `Welcome to Backboard! 👋
+      content: `What's Up I'm ROB! 👋
 
-I'm your TaskFlow onboarding assistant. I have knowledge from:
-• **Google Drive** - ADRs, meeting notes, legal docs
-• **Git history** - Commits, code changes, decisions
-• **Telegram** - Team chats and discussions
-
-**Try asking me:**
-• "Why is the rate limit 47?"
-• "Who owns the v1 API?"
-• "Why don't we use SQLAlchemy?"
-• "Is it safe to delete projects?"
-
-Use **@source** to see exact source references.
+I'm ROB, your team's onboarding assistant. I know everything about the system design decisions and how the codebase works.
 
 How can I help you today?`,
       timestamp: Date.now(),
@@ -212,14 +201,17 @@ How can I help you today?`,
 
   private _getHtmlForWebview(webview: vscode.Webview) {
     const nonce = this.getNonce();
+    const logoUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "resources", "logo.svg")
+    );
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-    <title>Backboard Chat</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
+    <title>ROB</title>
     <style>
         * {
             margin: 0;
@@ -230,20 +222,47 @@ How can I help you today?`,
         body {
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
-            background: linear-gradient(180deg, var(--vscode-editor-background) 0%, var(--vscode-sideBar-background) 100%);
+            background-color: var(--vscode-editor-background);
             color: var(--vscode-editor-foreground);
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 860px;
+            margin: 0 auto;
+            border-left: 1px solid var(--vscode-panel-border);
+            border-right: 1px solid var(--vscode-panel-border);
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 16px 18px 12px 18px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            min-height: 56px;
+        }
+
+        .app-logo {
+            height: 28px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            opacity: 0.97;
+        }
+
         #chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 18px 18px 8px 18px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .message {
@@ -274,45 +293,49 @@ How can I help you today?`,
 
         .message-header {
             font-size: 11px;
-            opacity: 0.7;
+            opacity: 0.55;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            padding: 0 4px;
         }
 
         .message-content {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            line-height: 1.5;
+            max-width: 88%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            line-height: 1.6;
             word-wrap: break-word;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.16);
+            letter-spacing: 0.01em;
+            margin-top: 2px;
         }
 
         .message.user .message-content {
-            background-color: var(--vscode-button-background);
+            background: linear-gradient(135deg, var(--vscode-button-background), var(--vscode-button-hoverBackground));
             color: var(--vscode-button-foreground);
             border-bottom-right-radius: 4px;
         }
 
         .message.assistant .message-content {
             background-color: var(--vscode-input-background);
-            border: 1px solid var(--vscode-input-border);
+            border: 1px solid rgba(255,255,255,0.02);
             border-bottom-left-radius: 4px;
         }
 
         .source-files {
-            margin-top: 12px;
+            margin-top: 10px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .sources-header {
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--vscode-descriptionForeground);
-            margin-bottom: 4px;
-            padding-bottom: 6px;
+            margin-bottom: 2px;
+            padding-bottom: 4px;
             border-bottom: 1px solid var(--vscode-panel-border);
         }
 
@@ -320,16 +343,16 @@ How can I help you today?`,
             background-color: var(--vscode-editor-inactiveSelectionBackground);
             border: 1px solid var(--vscode-panel-border);
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px 9px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.16s;
             border-left: 3px solid var(--vscode-panel-border);
         }
 
         .source-file:hover {
             background-color: var(--vscode-list-hoverBackground);
             border-color: var(--vscode-focusBorder);
-            transform: translateX(4px);
+            transform: translateX(3px);
         }
 
         /* Telegram source styling */
@@ -408,6 +431,7 @@ How can I help you today?`,
             border: 1px solid var(--vscode-input-border);
             border-radius: 12px;
             width: fit-content;
+            margin: 6px 18px 8px 18px;
         }
 
         #typing-indicator.show {
@@ -443,7 +467,7 @@ How can I help you today?`,
         }
 
         #input-container {
-            padding: 12px 16px;
+            padding: 10px 14px 12px 14px;
             background-color: var(--vscode-editor-background);
             border-top: 1px solid var(--vscode-panel-border);
             display: flex;
@@ -457,9 +481,9 @@ How can I help you today?`,
             align-items: center;
             background-color: var(--vscode-input-background);
             border: 1px solid var(--vscode-input-border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            transition: all 0.2s ease;
+            border-radius: 999px;
+            padding: 6px 12px;
+            transition: all 0.18s ease;
         }
 
         .input-wrapper:focus-within {
@@ -475,10 +499,10 @@ How can I help you today?`,
             padding: 0;
             font-family: var(--vscode-font-family);
             font-size: 13px;
-            line-height: 20px;
+            line-height: 19px;
             resize: none;
             outline: none;
-            max-height: 200px;
+            max-height: 160px;
             overflow-y: auto;
         }
 
@@ -508,7 +532,7 @@ How can I help you today?`,
             background-color: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
-            border-radius: 6px;
+            border-radius: 999px;
             cursor: pointer;
             transition: all 0.15s ease;
             flex-shrink: 0;
@@ -537,12 +561,12 @@ How can I help you today?`,
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             background: transparent;
             color: var(--vscode-icon-foreground);
             border: none;
-            border-radius: 6px;
+            border-radius: 999px;
             cursor: pointer;
             transition: all 0.15s ease;
             flex-shrink: 0;
@@ -601,9 +625,9 @@ How can I help you today?`,
 
         .shortcut-hint {
             font-size: 10px;
-            opacity: 0.5;
-            text-align: center;
-            padding: 8px;
+            opacity: 0.6;
+            text-align: right;
+            padding: 6px 16px 4px 16px;
             border-bottom: 1px solid var(--vscode-panel-border);
         }
 
@@ -637,41 +661,46 @@ How can I help you today?`,
     </style>
 </head>
 <body>
-    <div class="shortcut-hint">
-        Cmd+Shift+B to open • Cmd+Shift+A for quick questions
-    </div>
-    <div id="chat-container"></div>
-    <div id="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-    </div>
-    <div id="attached-file" style="display: none;">
-        <div class="attached-file-badge">
-            <span class="file-icon">[file]</span>
-            <span id="attached-file-name"></span>
-            <button id="remove-file-btn" title="Remove file">×</button>
+    <div class="app-shell">
+        <div class="app-header">
+            <img src="${logoUri}" alt="ROB logo" class="app-logo" />
         </div>
-    </div>
-    <div id="input-container">
-        <button id="attach-file-btn" title="Attach current file" aria-label="Attach file">
-            <svg viewBox="0 0 16 16" fill="currentColor">
-                <path d="M11.5 1a3.5 3.5 0 0 0-3.5 3.5V11a2 2 0 1 0 4 0V4.5a.5.5 0 0 1 1 0V11a3 3 0 1 1-6 0V4.5a4.5 4.5 0 1 1 9 0V11a.5.5 0 0 1-1 0V4.5A3.5 3.5 0 0 0 11.5 1z"/>
-            </svg>
-        </button>
-        <div class="input-wrapper">
-            <textarea 
-                id="message-input" 
-                placeholder="Ask Backboard..."
-                rows="1"
-                aria-label="Chat message"
-            ></textarea>
+        <div class="shortcut-hint">
+            Cmd+Shift+B to open • Cmd+Shift+A for quick questions
         </div>
-        <button id="send-button" title="Send message" aria-label="Send message">
-            <svg viewBox="0 0 16 16" fill="currentColor">
-                <path d="M15.854 7.354l-7-7a.5.5 0 0 0-.708.708L14.293 7H.5a.5.5 0 0 0 0 1h13.793l-6.147 6.146a.5.5 0 0 0 .708.708l7-7a.5.5 0 0 0 0-.708z"/>
-            </svg>
-        </button>
+        <div id="chat-container"></div>
+        <div id="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+        <div id="attached-file" style="display: none;">
+            <div class="attached-file-badge">
+                <span class="file-icon">[file]</span>
+                <span id="attached-file-name"></span>
+                <button id="remove-file-btn" title="Remove file">×</button>
+            </div>
+        </div>
+        <div id="input-container">
+            <button id="attach-file-btn" title="Attach current file" aria-label="Attach file">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M11.5 1a3.5 3.5 0 0 0-3.5 3.5V11a2 2 0 1 0 4 0V4.5a.5.5 0 0 1 1 0V11a3 3 0 1 1-6 0V4.5a4.5 4.5 0 1 1 9 0V11a.5.5 0 0 1-1 0V4.5A3.5 3.5 0 0 0 11.5 1z"/>
+                </svg>
+            </button>
+            <div class="input-wrapper">
+                <textarea 
+                    id="message-input" 
+                    placeholder="Ask ROB anything about this codebase, docs, or decisions…"
+                    rows="1"
+                    aria-label="Chat message"
+                ></textarea>
+            </div>
+            <button id="send-button" title="Send message" aria-label="Send message">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M15.854 7.354l-7-7a.5.5 0 0 0-.708.708L14.293 7H.5a.5.5 0 0 0 0 1h13.793l-6.147 6.146a.5.5 0 0 0 .708.708l7-7a.5.5 0 0 0 0-.708z"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <script nonce="${nonce}">
@@ -736,7 +765,7 @@ How can I help you today?`,
 
                 const header = document.createElement('div');
                 header.className = 'message-header';
-                header.textContent = message.role === 'user' ? 'You' : 'Backboard';
+                header.textContent = message.role === 'user' ? 'You' : 'ROB';
                 messageDiv.appendChild(header);
 
                 const content = document.createElement('div');
