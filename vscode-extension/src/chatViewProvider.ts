@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BackboardService, ChatMessage, FileContext } from "./backboardService";
+import { BackboardService, ChatMessage, FileContext, ToolResult } from "./backboardService";
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -84,6 +84,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         type: "addMessage",
         message: response,
       });
+
+      // Handle tool results (e.g., create_file)
+      if (response.toolResults && response.toolResults.length > 0) {
+        for (const toolResult of response.toolResults) {
+          if (toolResult.tool === "create_file" && toolResult.filename && toolResult.content) {
+            await this.handleCreateFile(toolResult.filename, toolResult.content);
+          }
+        }
+      }
     } catch (error) {
       this._view?.webview.postMessage({ type: "hideTyping" });
       const errorMessage: ChatMessage = {
@@ -187,6 +196,71 @@ How can I help you today?`,
     vscode.window.showTextDocument(uri, {
       selection: line ? new vscode.Range(line - 1, 0, line - 1, 0) : undefined,
     });
+  }
+
+  private async handleCreateFile(filename: string, content: string) {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      vscode.window.showErrorMessage("No workspace folder open. Cannot create file.");
+      return;
+    }
+
+    try {
+      // Normalize path separators and validate
+      const normalizedPath = filename.replace(/\\/g, "/");
+      
+      // Reject absolute paths and path traversal
+      if (normalizedPath.startsWith("/") || normalizedPath.includes("../")) {
+        vscode.window.showErrorMessage(`Invalid file path: ${filename}`);
+        return;
+      }
+
+      // Create the file URI
+      const fileUri = vscode.Uri.joinPath(workspaceFolders[0].uri, normalizedPath);
+
+      // Check if file already exists
+      try {
+        await vscode.workspace.fs.readFile(fileUri);
+        // File exists - ask user if they want to overwrite
+        const overwrite = await vscode.window.showWarningMessage(
+          `File ${filename} already exists. Overwrite?`,
+          "Overwrite",
+          "Cancel"
+        );
+        if (overwrite !== "Overwrite") {
+          return;
+        }
+      } catch {
+        // File doesn't exist - that's fine, we'll create it
+      }
+
+      // Create parent directories if needed
+      const pathParts = normalizedPath.split("/");
+      if (pathParts.length > 1) {
+        const dirParts = pathParts.slice(0, -1);
+        let currentPath = workspaceFolders[0].uri;
+        for (const part of dirParts) {
+          currentPath = vscode.Uri.joinPath(currentPath, part);
+          try {
+            await vscode.workspace.fs.createDirectory(currentPath);
+          } catch {
+            // Directory might already exist, that's fine
+          }
+        }
+      }
+
+      // Write the file
+      const encoder = new TextEncoder();
+      await vscode.workspace.fs.writeFile(fileUri, encoder.encode(content));
+
+      // Open the file in the editor
+      const document = await vscode.workspace.openTextDocument(fileUri);
+      await vscode.window.showTextDocument(document);
+
+      vscode.window.showInformationMessage(`Created file: ${filename}`);
+    } catch (error: any) {
+      vscode.window.showErrorMessage(`Failed to create file ${filename}: ${error.message}`);
+    }
   }
 
   private getNonce() {
