@@ -7,6 +7,15 @@ export interface ChatMessage {
     timestamp: number;
     sources?: SourceFile[];
     context?: FileContext;
+    toolResults?: ToolResult[];
+}
+
+export interface ToolResult {
+  tool: string;
+  status: string;
+  filename?: string;
+  content?: string;
+  message?: string;
 }
 
 export interface SourceFile {
@@ -92,19 +101,26 @@ export class BackboardService {
         null
       );
 
-      // Backend returns a tuple [response, sources]
-      // Handle both array format [response, sources] and potential object format
+      // Backend returns a tuple [response, sources, toolResults]
+      // Handle both array format [response, sources, toolResults] and potential object format
       let content: string;
       let sources: string[] = [];
+      let toolResults: ToolResult[] = [];
 
       if (Array.isArray(response.data)) {
-        [content, sources] = response.data;
+        // Handle 2-element (backward compat) or 3-element response
+        [content, sources, toolResults] = response.data;
+        // Ensure toolResults is defined
+        if (!toolResults) {
+          toolResults = [];
+        }
       } else if (typeof response.data === "object" && response.data !== null) {
         content =
           response.data.response ||
           response.data.content ||
           JSON.stringify(response.data);
         sources = response.data.sources || [];
+        toolResults = response.data.toolResults || [];
             } else {
         content = String(response.data || "No response received");
       }
@@ -124,6 +140,7 @@ export class BackboardService {
         content: content,
         timestamp: Date.now(),
         sources: sourceFiles.length > 0 ? sourceFiles : undefined,
+        toolResults: toolResults.length > 0 ? toolResults : undefined,
       };
     } catch (error: any) {
       console.error("Backend query failed:", error);
