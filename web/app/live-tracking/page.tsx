@@ -7,6 +7,17 @@ import { API } from "../../lib/api";
 export default function LiveTrackingPage() {
   const [updates, setUpdates] = useState<any[]>([]);
 
+  const formatTime = (timeStr: string) => {
+    try {
+      // Handle SQLite format YYYY-MM-DD HH:MM:SS
+      const date = new Date(timeStr.replace(' ', 'T'));
+      if (isNaN(date.getTime())) return timeStr;
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return timeStr;
+    }
+  };
+
   useEffect(() => {
     const fetchActivity = async () => {
       try {
@@ -150,7 +161,7 @@ export default function LiveTrackingPage() {
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{update.time}</span>
+                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{formatTime(update.time)}</span>
                       </div>
                       <p className="text-sm font-medium text-zinc-200 truncate">{update.title}</p>
                       <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{update.summary}</p>
@@ -174,7 +185,7 @@ export default function LiveTrackingPage() {
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-blue-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{update.time}</span>
+                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{formatTime(update.time)}</span>
                       </div>
                       <p className="text-sm font-medium text-zinc-200 truncate">{update.title}</p>
                       <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{update.summary}</p>
@@ -198,7 +209,7 @@ export default function LiveTrackingPage() {
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-purple-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{update.time}</span>
+                        <span className="ml-auto text-[10px] font-medium text-zinc-500">{formatTime(update.time)}</span>
                       </div>
                       <p className="text-sm font-medium text-zinc-200 truncate">{update.title}</p>
                       <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{update.summary}</p>

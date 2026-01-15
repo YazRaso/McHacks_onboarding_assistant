@@ -73,6 +73,20 @@ cur.execute(
 """
 )
 
+cur.execute(
+    """
+    CREATE TABLE IF NOT EXISTS activity_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client_id TEXT,
+        source TEXT,
+        title TEXT,
+        summary TEXT,
+        color TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+"""
+)
+
 def get_connection():
     con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row
@@ -267,3 +281,33 @@ def lookup_repository(repo_url: str):
     repo = cur.fetchone()
     con.close()
     return dict(repo) if repo else None
+
+# Activity Log functions
+def log_activity(client_id: str, source: str, title: str, summary: str, color: str):
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute(
+        """
+        INSERT INTO activity_log (client_id, source, title, summary, color)
+        VALUES (?, ?, ?, ?, ?)
+    """,
+        (client_id, source, title, summary, color),
+    )
+    con.commit()
+    con.close()
+
+def get_recent_activity(client_id: str, limit: int = 10):
+    con = get_connection()
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(
+        """
+        SELECT * FROM activity_log WHERE client_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    """,
+        (client_id, limit),
+    )
+    logs = cur.fetchall()
+    con.close()
+    return [dict(log) for log in logs] if logs else []

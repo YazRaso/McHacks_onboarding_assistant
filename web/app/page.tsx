@@ -1,7 +1,25 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { API } from "../lib/api";
 
 export default function Home() {
-    const hasKey = !!process.env.BACKBOARD_API_KEY;
+    const [isOnline, setIsOnline] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                await API.getStatus();
+                setIsOnline(true);
+            } catch (err) {
+                setIsOnline(false);
+            }
+        };
+        checkStatus();
+        const interval = setInterval(checkStatus, 10000);
+        return () => clearInterval(interval);
+    }, []);
 
     const cards = [
         {
@@ -27,11 +45,11 @@ export default function Home() {
         },
         {
             title: "Backend Status",
-            description: "API Connection established",
+            description: isOnline === null ? "Checking connection..." : isOnline ? "API Connection established" : "Backend is currently offline",
             href: "#",
             icon: "circle",
-            color: "from-green-500/20 to-emerald-500/20",
-            iconColor: "text-green-500"
+            color: isOnline ? "from-green-500/20 to-emerald-500/20" : "from-red-500/20 to-orange-500/20",
+            iconColor: isOnline === null ? "text-zinc-500" : isOnline ? "text-green-500" : "text-red-500"
         },
     ];
 

@@ -9,16 +9,36 @@ import os
 import asyncio
 import requests
 from backboard import BackboardClient
+from backboard.exceptions import BackboardAPIError
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-import encryption
-import db
-from drive_service import DriveService, extract_file_id_from_url
-from git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
-from events import emit_event, event_stream
+from src.backend import encryption
+from src.backend import db
+from src.backend.drive_service import DriveService, extract_file_id_from_url
+from src.backend.git_service import parse_github_url, fetch_repo_contents, fetch_file_content, should_ingest_file, should_skip_directory
+from src.backend.events import emit_event, event_stream
 
 app = FastAPI()
+
+def get_or_create_client(client_id: str):
+    """Helper to ensure a client exists, specifically for local testing with default_user."""
+    client = db.lookup_client(client_id)
+    if not client and client_id == "default_user":
+        # Check if we have a real key in .env, otherwise use mock
+        real_key = os.getenv("BACKBOARD_API_KEY")
+        key_to_use = real_key if real_key else "mock_key_for_local_testing"
+        
+        try:
+            encrypted_key = encryption.encrypt_api_key(key_to_use)
+        except ValueError:
+            encrypted_key = key_to_use
+            
+        db.create_client("default_user", encrypted_key)
+        # Also create a mock assistant for the default user (must be valid UUID format)
+        db.create_assistant("00000000-0000-0000-0000-000000000000", "default_user")
+        client = db.lookup_client(client_id)
+    return client
 
 # Enable CORS
 app.add_middleware(
@@ -109,7 +129,7 @@ async def create_client(client_id: str, api_key: str, status_code=201):
 # add_thread uses client_ids assistant and prompts backboard with content
 @app.post("/messages/send")
 async def add_thread(client_id: str, content: str, status_code=201):
-    client = db.lookup_client(client_id)
+    client = get_or_create_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client does not exist!")
     # For simplicity, we assume that each client has one assistant
@@ -121,25 +141,29 @@ async def add_thread(client_id: str, content: str, status_code=201):
             status_code=404, detail="No assistant found for this client!"
         )
     assistant_id = assistant["assistant_id"]
-    thread = await backboard_client.create_thread(assistant_id)
-    output = []
-    sources = []
-    async for chunk in await backboard_client.add_message(
-        thread_id=thread.thread_id,
-        content=content,
-        memory="auto",
-        stream=True
-    ):
-        print(chunk)
-        if chunk['type'] == 'content_streaming':
-            output.append(chunk['content'])
-    output = "".join(output)
-    return output
+    try:
+        thread = await backboard_client.create_thread(assistant_id)
+        output = []
+        async for chunk in await backboard_client.add_message(
+            thread_id=thread.thread_id,
+            content=content,
+            memory="auto",
+            stream=True
+        ):
+            if chunk['type'] == 'content_streaming':
+                output.append(chunk['content'])
+        return "".join(output)
+    except BackboardAPIError as e:
+        if "API Key" in str(e):
+            return "Local Server Message: I detected that no real Backboard API Key is configured. Please add `BACKBOARD_API_KEY` to your `.env` file to enable real AI responses!"
+        return f"Local Server Error: {str(e)}"
+    except Exception as e:
+        return f"Local Server unexpected error: {str(e)}"
 
 # query sends backboards response along with sources of information
 @app.post("/messages/query")
 async def query(client_id: str, content: str, status_code=201):
-    client = db.lookup_client(client_id)
+    client = get_or_create_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client does not exist!")
     # For simplicity, we assume that each client has one assistant
@@ -151,43 +175,30 @@ async def query(client_id: str, content: str, status_code=201):
             status_code=404, detail="No assistant found for this client!"
         )
     assistant_id = assistant["assistant_id"]
-    thread = await backboard_client.create_thread(assistant_id)
-    output = []
-    sources = []
-    async for chunk in await backboard_client.add_message(
-        thread_id=thread.thread_id,
-        content=content,
-        memory="auto",
-        stream=True
-    ):
-        print(chunk)
-        if chunk['type'] == 'content_streaming':
-            output.append(chunk['content'])
-            print(chunk['content'])
-      #  elif chunk['type'] == 'memory_retrieved':
-      #      print(chunk['memories'])
-      #      sources.append(chunk['memories'][0]['memory'])
-        elif chunk['type'] == 'run_ended' and chunk.get("retrieved_memories", None):
-            memories = chunk['retrieved_memories']
-            for memory in memories:
-                sources.append(memory['memory'])
-        #elif chunk['type'] == 'run_ended' and chunk.get('memory_operation_id', None):
-        #    print(chunk['memory_operation_id'])
-        #    memory_operation_id = chunk['memory_operation_id']
-    #memory = await backboard_client.add_memory(assistant_id=assistant_id, content=content)
-    #memory_id = memory["memory_id"]
-    # for debugging
-    # print(f"Memory id is {memory_id}")
-    # goal is to check what methods the object has
-    # methods = [m for m in dir(backboard_client) if callable(getattr(backboard_client, m))]
-    # memories = await backboard_client.get_memories(assistant_id=assistant_id)
-    # print(f"All memories {memories}")
-    # for method in methods:
-    #    print(f"Method found! {method}")
-    #await backboard_client.get_memory(assistant_id=assistant_id, memory_id=memory_id)
-    output = "".join(output)
-    print(sources)
-    return (output, sources)
+    try:
+        thread = await backboard_client.create_thread(assistant_id)
+        output = []
+        sources = []
+        async for chunk in await backboard_client.add_message(
+            thread_id=thread.thread_id,
+            content=content,
+            memory="auto",
+            stream=True
+        ):
+            if chunk['type'] == 'content_streaming':
+                output.append(chunk['content'])
+            elif chunk['type'] == 'run_ended' and chunk.get("retrieved_memories", None):
+                memories = chunk['retrieved_memories']
+                for memory in memories:
+                    sources.append(memory['memory'])
+        
+        output = "".join(output)
+        return (output, sources)
+    except BackboardAPIError as e:
+        msg = f"Local Server Message: I detected that no real Backboard API Key is configured. Please add `BACKBOARD_API_KEY` to your `.env` file to enable real AI responses!" if "API Key" in str(e) else f"Local Server Error: {str(e)}"
+        return (msg, [])
+    except Exception as e:
+        return (f"Local Server unexpected error: {str(e)}", [])
 
 #@app.post("/messages/summarize")
 #async def summarize(client_id: str, status_code=201):
@@ -361,13 +372,22 @@ async def get_system_status(client_id: str = "default_user"):
     """
     Get the connection status of all services.
     """
-    client = db.lookup_client(client_id)
+    client = get_or_create_client(client_id)
+
     drive_docs = db.get_all_drive_documents_for_client(client_id)
     
-    # Check if telegram bot is running (simplified placeholder)
-    # In a real app, this would check a process or heartbeat
-    telegram_connected = False 
+    # Get last updated times from activity log
+    activity = db.get_recent_activity(client_id, limit=50)
     
+    def get_last_time(source_name):
+        for log in activity:
+            if log["source"] == source_name:
+                return log["created_at"]
+        return None
+
+    # Check if telegram bot is running (simplified placeholder)
+    telegram_connected = False 
+
     return {
         "client": {
             "id": client_id,
@@ -377,15 +397,15 @@ async def get_system_status(client_id: str = "default_user"):
         "drive": {
             "connected": len(drive_docs) > 0,
             "document_count": len(drive_docs),
-            "lastUpdated": drive_docs[0]["updated_at"] if drive_docs else None
+            "lastUpdated": get_last_time("Drive") or (drive_docs[0]["updated_at"] if drive_docs else None)
         },
         "telegram": {
-            "connected": telegram_connected,
-            "lastUpdated": None
+            "connected": telegram_connected or get_last_time("Telegram") is not None,
+            "lastUpdated": get_last_time("Telegram")
         },
         "codebase": {
-            "connected": True, # Placeholder for demo
-            "lastUpdated": "2026-01-12 10:00 UTC" # Placeholder
+            "connected": get_last_time("GitHub") is not None,
+            "lastUpdated": get_last_time("GitHub")
         }
     }
 
@@ -394,24 +414,22 @@ async def get_activity(client_id: str = "default_user", limit: int = 10):
     """
     Get recent activity across all sources.
     """
-    # Get recent drive updates
-    docs = db.get_all_drive_documents_for_client(client_id)
-    drive_activity = [
+    activity = db.get_recent_activity(client_id, limit)
+    
+    # Format for frontend if necessary (e.g., converting time to friendly format)
+    # The frontend expects { source, title, summary, time, color }
+    formatted_activity = [
         {
-            "source": "Drive",
-            "title": f"Document '{doc['file_name']}' synced",
-            "summary": f"Extracted context from {doc['file_name']}",
-            "time": doc["updated_at"],
-            "color": "emerald"
+            "source": log["source"],
+            "title": log["title"],
+            "summary": log["summary"],
+            "time": log["created_at"], # We can format this if needed
+            "color": log["color"]
         }
-        for doc in docs
+        for log in activity
     ]
     
-    # Get recent chat updates (simplified)
-    # In a real app we'd query the chats table for timestamps
-    # For now, let's keep it simple or use mocks if table empty
-    
-    return sorted(drive_activity, key=lambda x: x["time"], reverse=True)[:limit]
+    return formatted_activity
 
 
 @app.post("/git/register")
@@ -560,7 +578,14 @@ async def git_webhook(request: Request):
         return {"status": "error", "reason": "No assistant found"}
 
     assistant_id = assistant["assistant_id"]
-    thread = await backboard_client.create_thread(assistant_id)
+    try:
+        thread = await backboard_client.create_thread(assistant_id)
+    except BackboardAPIError as e:
+        print(f"Error creating thread for git webhook: {e}")
+        return {"status": "error", "reason": f"Backboard API Error: {str(e)}"}
+    except Exception as e:
+        print(f"Unexpected error in git webhook: {e}")
+        return {"status": "error", "reason": f"Unexpected error: {str(e)}"}
 
     for file_path, file_content in changed_files:
         async for chunk in await backboard_client.add_message(
@@ -570,6 +595,15 @@ async def git_webhook(request: Request):
             stream=True,
         ):
             pass  # Just consume the stream
+
+    # Log activity for dashboard
+    db.log_activity(
+        client_id=client_id,
+        source="GitHub",
+        title=f"New push to {repo}",
+        summary=f"Processed {len(changed_files)} files: {', '.join([f[0] for f in changed_files[:3]])}{'...' if len(changed_files) > 3 else ''}",
+        color="blue"
+    )
 
     # Emit event to notify frontend of repo update
     await emit_event("repo", client_id)
