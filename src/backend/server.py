@@ -99,7 +99,7 @@ async def create_client(client_id: str, api_key: str, status_code=201):
     tools = get_backboard_tools()
     assistant = await backboard_client.create_assistant(
         name="Test Assistant",
-        system_prompt="You are a helpful assistant designed to understand code and help with onboarding. You can create files, retrieve recent context, and generate visualizations.",
+        description="You are a helpful assistant designed to understand code and help with onboarding. You can create files, retrieve recent context, and generate visualizations.",
         tools=tools
     )
     # Create entries for db
