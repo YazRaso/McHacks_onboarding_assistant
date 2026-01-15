@@ -153,6 +153,51 @@ Eliminate the need for the user to ask questions twice. Be proactive, brief, and
     }
 
 
+# Upload content directly to assistant's knowledge base
+@app.post("/client/upload-content")
+async def upload_content(client_id: str, content: str, title: str = "Uploaded Content"):
+    """Upload text content directly to the assistant's knowledge base."""
+    import tempfile
+    import os as upload_os
+
+    client = db.lookup_client(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Client does not exist!")
+
+    assistant = db.lookup_assistant(client_id)
+    if not assistant:
+        raise HTTPException(
+            status_code=404, detail="No assistant found for this client!"
+        )
+
+    # API key is stored directly (not encrypted) in prod_backend
+    backboard_client = BackboardClient(api_key=client["api_key"])
+    assistant_id = assistant["assistant_id"]
+
+    # Create a temporary file with the content
+    temp_file_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, encoding="utf-8"
+        ) as temp_file:
+            temp_file.write(f"# {title}\n\n{content}")
+            temp_file_path = temp_file.name
+
+        # Upload to assistant
+        document = await backboard_client.upload_document_to_assistant(
+            assistant_id, temp_file_path
+        )
+
+        return {
+            "status": "uploaded",
+            "document_id": str(document.document_id),
+            "title": title,
+        }
+    finally:
+        if temp_file_path and upload_os.path.exists(temp_file_path):
+            upload_os.remove(temp_file_path)
+
+
 # add_thread uses client_ids assistant and prompts backboard with content
 @app.post("/messages/send")
 async def add_thread(client_id: str, content: str, status_code=201):
