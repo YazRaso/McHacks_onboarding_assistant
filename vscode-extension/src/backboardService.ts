@@ -198,6 +198,121 @@ I found ${mockSources.length} relevant source files. Click on any file below to 
         };
     }
 
+    private async handleCreateFileRequest(message: string): Promise<ChatMessage> {
+        try {
+            // Call the backend API to execute the tool
+            const response = await this.apiClient.post('/messages/send', null, {
+                params: {
+                    client_id: this.clientId,
+                    content: message
+                }
+            });
+
+            const toolResult = response.data;
+            
+            // If the tool returned a create_file result, trigger file creation
+            if (toolResult.type === 'tool_result' && toolResult.tool === 'create_file') {
+                const fileInfo = toolResult.result;
+                
+                // Emit event for the chat view provider to handle
+                // The chat view provider will use vscode.workspace.fs.writeFile
+                return {
+                    role: 'assistant',
+                    content: `I'll create the file: ${fileInfo.filename}\n\n${fileInfo.message}`,
+                    timestamp: Date.now(),
+                    toolResult: {
+                        type: 'create_file',
+                        filename: fileInfo.filename,
+                        content: fileInfo.content || ''
+                    }
+                };
+            }
+
+            return {
+                role: 'assistant',
+                content: 'File creation request processed.',
+                timestamp: Date.now()
+            };
+        } catch (error) {
+            console.error('Create file request failed:', error);
+            return {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error creating the file. Please try again.',
+                timestamp: Date.now()
+            };
+        }
+    }
+
+    private async handleGetRecentContextRequest(message: string): Promise<ChatMessage> {
+        try {
+            const response = await this.apiClient.post('/messages/send', null, {
+                params: {
+                    client_id: this.clientId,
+                    content: message
+                }
+            });
+
+            const toolResult = response.data;
+            
+            if (toolResult.type === 'tool_result' && toolResult.tool === 'get_recent_context') {
+                const context = toolResult.result;
+                return {
+                    role: 'assistant',
+                    content: context.formatted || 'No recent context found.',
+                    timestamp: Date.now()
+                };
+            }
+
+            return {
+                role: 'assistant',
+                content: 'Recent context retrieved.',
+                timestamp: Date.now()
+            };
+        } catch (error) {
+            console.error('Get recent context request failed:', error);
+            return {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error retrieving recent context.',
+                timestamp: Date.now()
+            };
+        }
+    }
+
+    private async handleGenerateMermaidGraphRequest(message: string): Promise<ChatMessage> {
+        try {
+            const response = await this.apiClient.post('/messages/send', null, {
+                params: {
+                    client_id: this.clientId,
+                    content: message
+                }
+            });
+
+            const toolResult = response.data;
+            
+            if (toolResult.type === 'tool_result' && toolResult.tool === 'generate_mermaid_graph') {
+                const graph = toolResult.result;
+                return {
+                    role: 'assistant',
+                    content: graph.formatted || graph.mermaid || 'Could not generate graph.',
+                    timestamp: Date.now()
+                };
+            }
+
+            return {
+                role: 'assistant',
+                content: 'Mermaid graph generated.',
+                timestamp: Date.now()
+            };
+        } catch (error) {
+            console.error('Generate mermaid graph request failed:', error);
+            return {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error generating the graph.',
+                timestamp: Date.now()
+            };
+        }
+    }
+
     async checkConnection(): Promise<boolean> {
         try {
             const response = await this.apiClient.get('/');
