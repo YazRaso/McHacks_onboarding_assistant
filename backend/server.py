@@ -56,6 +56,9 @@ app.add_middleware(
 
 drive_service = None  # Will be initialized when needed
 
+# In-memory map of client_id -> Backboard thread_id so conversations are continuous
+active_threads = {}
+
 # GitHub token for creating webhooks (set via environment variable)
 # For demo: export GITHUB_TOKEN="your_personal_access_token"
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -117,8 +120,26 @@ async def create_client(client_id: str, api_key: str, status_code=201):
     # Create assistant with tools
     tools = get_backboard_tools()
     assistant = await backboard_client.create_assistant(
-        name="Test Assistant",
-        description="You are a helpful assistant designed to understand code and help with onboarding. You can create files, retrieve recent context, and generate visualizations.",
+        name="ROB",
+        description="""You are ROB, an advanced engineering assistant designed to automate onboarding and provide accurate information for the codebase.
+You have direct read/write access to the team's Codebase (GitHub), Communication History (Telegram), and Documentation (Drive).
+
+YOUR CAPABILITIES (TOOLS):
+1. Create Files: You can generate physical files (e.g., Markdown docs) in the user's workspace using the `create_file` tool.
+2. Retrieve Context: You can look up what happened while the user was offline using `get_recent_context`.
+3. Visualize: You can map decision flows using `generate_mermaid_graph`.
+
+CRITICAL RULES:
+1. NO REFUSALS: Never say "I don't have access to files" or "I cannot browse." The context provided to you IS your access. If information is in the context, treat it as absolute knowledge you possess.
+2. BE AUTHORITATIVE: Do not use hedging language like "It appears that..." or "According to the provided text..." Just state the facts.
+   - Bad: "It seems the timeout might be 5000ms based on the chat."
+   - Good: "The timeout is 5000ms, decided by Jason on Jan 12 to fix mobile latency."
+3. MEMORY IS CONTINUOUS: Remember the immediate previous messages. If the user says "Rewrite that file," you must know which file was just discussed.
+4. CITE SOURCES: Aggressively tag where information comes from (Telegram, Drive, or Code) to prove your value.
+
+YOUR GOAL:
+Eliminate the need for the user to ask questions twice. Be proactive, brief, and technical.
+""",
         tools=tools
     )
     # Create entries for db
@@ -149,10 +170,16 @@ async def add_thread(client_id: str, content: str, status_code=201):
         )
     assistant_id = assistant["assistant_id"]
 
-    # Create thread and send message
-    thread = await backboard_client.create_thread(assistant_id)
+    # Reuse an existing thread for this client if available so the conversation is continuous
+    thread_id = active_threads.get(client_id)
+    if not thread_id:
+        thread = await backboard_client.create_thread(assistant_id)
+        thread_id = thread.thread_id
+        active_threads[client_id] = thread_id
+
+    # Send message on the (possibly reused) thread
     response = await backboard_client.add_message(
-        thread_id=thread.thread_id,
+        thread_id=thread_id,
         content=content,
         memory="auto",
         stream=False
@@ -239,7 +266,7 @@ async def add_thread(client_id: str, content: str, status_code=201):
                     raise ValueError("Response missing run_id")
                 
                 final_response = await backboard_client.submit_tool_outputs(
-                    thread_id=thread.thread_id,
+                    thread_id=thread_id,
                     run_id=response_run_id,
                     tool_outputs=tool_outputs
                 )
@@ -267,12 +294,19 @@ async def query(client_id: str, content: str, status_code=201):
             status_code=404, detail="No assistant found for this client!"
         )
     assistant_id = assistant["assistant_id"]
-    try:
+
+    # Reuse an existing thread for this client if available so the conversation is continuous
+    thread_id = active_threads.get(client_id)
+    if not thread_id:
         thread = await backboard_client.create_thread(assistant_id)
+        thread_id = thread.thread_id
+        active_threads[client_id] = thread_id
+
+    try:
         output = []
         sources = []
         async for chunk in await backboard_client.add_message(
-            thread_id=thread.thread_id,
+            thread_id=thread_id,
             content=content,
             memory="auto",
             stream=True
