@@ -18,19 +18,17 @@ export default function RootLayout({
     { name: "Memory Overview", href: "/memory", icon: "psychology" },
     { name: "Connected Apps", href: "/connected", icon: "hub" },
     { name: "Query Assistant", href: "/query", icon: "chat_bubble" },
-    { name: "API Settings", href: "/settings", icon: "settings" },
+
     { name: "Live Tracking", href: "/live-tracking", icon: "sensors" },
   ];
 
   const NavContent = () => (
-    <>
+    <div>
       <Link href="/" className="flex items-center gap-3 px-2">
-        <div className="w-8 h-8 bg-zinc-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-zinc-600/30">
-          B
+        <div className="w-32 h-16 flex items-center justify-center">
+          <img src="/logo.svg" alt="Backboard Logo" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
-          Backboard
-        </h1>
+
       </Link>
 
 
@@ -62,7 +60,7 @@ export default function RootLayout({
           </div>
         </Link>
       </div>
-    </>
+    </div>
   );
 
   const isAuthPage = pathname === '/signin' || pathname === '/signup';
@@ -124,7 +122,9 @@ export default function RootLayout({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                   </svg>
                 </button>
-                <Link href="/" className="font-bold tracking-tight">Backboard</Link>
+                <Link href="/" className="flex items-center justify-center w-32 h-14">
+                  <img src="/logo.svg" alt="Backboard Logo" className="w-full h-full object-contain" />
+                </Link>
               </div>
             </header>
             <div className="p-6 md:p-8 max-w-7xl mx-auto">

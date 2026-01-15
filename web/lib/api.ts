@@ -1,9 +1,9 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export type EventSource = "drive" | "repo" | "telegram";
+export type ActivitySource = "drive" | "repo" | "telegram";
 
 export interface DataEvent {
-    source: EventSource;
+    source: ActivitySource;
     timestamp: string;
     client_id?: string;
 }

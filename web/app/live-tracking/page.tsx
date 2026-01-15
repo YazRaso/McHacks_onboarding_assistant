@@ -26,9 +26,17 @@ export default function LiveTrackingPage() {
       }
     };
 
+
     fetchActivity();
-    const interval = setInterval(fetchActivity, 10000);
-    return () => clearInterval(interval);
+
+    // Subscribe to SSE for real-time updates
+    const unsubscribe = API.subscribeToEvents((event) => {
+      console.log("Received event:", event);
+      // Refresh activity when we receive an event
+      fetchActivity();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

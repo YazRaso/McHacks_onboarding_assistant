@@ -38,7 +38,7 @@ export default function SignupPage() {
 
             <div className="relative z-10 w-full max-w-md p-8 sm:p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
                 <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-2">
+                    <h1 className="text-4xl font-bold text-white mb-2">
                         Create Account
                     </h1>
                     <p className="text-gray-400">Join us to start your journey</p>
@@ -57,7 +57,7 @@ export default function SignupPage() {
                             value={formData.name}
                             onChange={handleChange}
                             placeholder="John Doe"
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
                             required
                         />
                     </div>
@@ -74,7 +74,7 @@ export default function SignupPage() {
                             value={formData.email}
                             onChange={handleChange}
                             placeholder="john@example.com"
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
                             required
                         />
                     </div>
@@ -91,7 +91,7 @@ export default function SignupPage() {
                             value={formData.password}
                             onChange={handleChange}
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-200"
                             required
                         />
                     </div>
@@ -107,7 +107,7 @@ export default function SignupPage() {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white appearance-none transition-all duration-200"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white appearance-none transition-all duration-200"
                             >
                                 <option value="developer" className="bg-gray-900 text-white">Developer</option>
                                 <option value="admin" className="bg-gray-900 text-white">Admin</option>
@@ -123,7 +123,7 @@ export default function SignupPage() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] duration-200"
+                        className="w-full py-3.5 px-4 bg-blue-500 hover:bg-blue-400 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02] active:scale-[0.98] duration-200"
                     >
                         Create Account
                     </button>
@@ -131,7 +131,7 @@ export default function SignupPage() {
 
                 <div className="mt-8 text-center text-sm text-gray-400">
                     Already have an account?{' '}
-                    <Link href="/signin" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                    <Link href="/signin" className="text-blue-500 hover:text-blue-400 font-medium transition-colors">
                         Sign In
                     </Link>
                 </div>
