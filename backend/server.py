@@ -10,7 +10,7 @@ import asyncio
 import requests
 from backboard import BackboardClient
 from backboard.exceptions import BackboardAPIError
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import db
@@ -155,7 +155,11 @@ Eliminate the need for the user to ask questions twice. Be proactive, brief, and
 
 # Upload content directly to assistant's knowledge base
 @app.post("/client/upload-content")
-async def upload_content(client_id: str, content: str, title: str = "Uploaded Content"):
+async def upload_content(
+    client_id: str,
+    content: str = Body(...),
+    title: str = "Uploaded Content",
+):
     """Upload text content directly to the assistant's knowledge base."""
     import tempfile
     import os as upload_os
