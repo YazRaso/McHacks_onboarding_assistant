@@ -14,6 +14,7 @@ An intelligent onboarding assistant that integrates with Google Drive, Telegram,
 <img width="951" height="1162" alt="Screenshot 2026-01-15 at 1 21 42 PM" src="https://github.com/user-attachments/assets/b71ab6ae-d445-4b7b-b5a6-000a6330f6d2" />
 <img width="2438" height="1187" alt="Screenshot 2026-01-15 at 1 18 38 PM" src="https://github.com/user-attachments/assets/47b7f919-554c-4cfa-b919-8407e96a797d" />
 <img width="2439" height="1190" alt="Screenshot 2026-01-15 at 1 18 57 PM" src="https://github.com/user-attachments/assets/f1901371-1789-4ae8-9244-13bfc11457d1" />
+<img width="2439" height="1185" alt="Screenshot 2026-01-15 at 1 39 18 PM" src="https://github.com/user-attachments/assets/f66b457c-b724-4e41-807b-adbbd77bdad9" />
 
 ## Quick Start
 
