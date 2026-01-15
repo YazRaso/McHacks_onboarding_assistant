@@ -15,7 +15,7 @@ from telegram.ext import (
 )
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-SERVER_URL = os.getenv("https://rob-production.up.railway.app/")
+SERVER_URL = "https://rob-production.up.railway.app/"
 
 # log_thread saves telegram messages with metadate to db, message is sent to backboard as consequence
 async def log_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
