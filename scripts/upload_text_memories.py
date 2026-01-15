@@ -53,7 +53,8 @@ def upload_file(backend_url: str, client_id: str, path: str, title: str) -> None
     }
 
     print(f"[upload] {path} → {url} (client_id={client_id}, title={title!r})")
-    resp = requests.post(url, params=params, data=content.encode("utf-8"), timeout=60)
+    headers = {"Content-Type": "text/plain"}
+    resp = requests.post(url, params=params, data=content.encode("utf-8"), headers=headers, timeout=60)
     try:
         body = resp.json()
     except Exception:

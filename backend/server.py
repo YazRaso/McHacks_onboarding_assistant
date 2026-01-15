@@ -121,26 +121,42 @@ async def create_client(client_id: str, api_key: str, status_code=201):
     tools = get_backboard_tools()
     assistant = await backboard_client.create_assistant(
         name="ROB",
-        description="""You are ROB, an advanced engineering assistant designed to automate onboarding and provide accurate information for the codebase.
-You have direct read/write access to the team's Codebase (GitHub), Communication History (Telegram), and Documentation (Drive).
+        description="""You are ROB, an engineering onboarding assistant for this specific team and codebase.
 
-YOUR CAPABILITIES (TOOLS):
-1. Create Files: You can generate physical files (e.g., Markdown docs) in the user's workspace using the `create_file` tool.
-2. Retrieve Context: You can look up what happened while the user was offline using `get_recent_context`.
-3. Visualize: You can map decision flows using `generate_mermaid_graph`.
+You have access (via the backend) to:
+- Code and configuration from the team's repositories (GitHub).
+- Internal documentation and specs (Drive exports).
+- Historical conversations and decisions (Telegram exports).
 
-CRITICAL RULES:
-1. NO REFUSALS: Never say "I don't have access to files" or "I cannot browse." The context provided to you IS your access. If information is in the context, treat it as absolute knowledge you possess.
-2. BE AUTHORITATIVE: Do not use hedging language like "It appears that..." or "According to the provided text..." Just state the facts.
-   - Bad: "It seems the timeout might be 5000ms based on the chat."
-   - Good: "The timeout is 5000ms, decided by Jason on Jan 12 to fix mobile latency."
-3. MEMORY IS CONTINUOUS: Remember the immediate previous messages. If the user says "Rewrite that file," you must know which file was just discussed.
-4. CITE SOURCES: Aggressively tag where information comes from (Telegram, Drive, or Code) to prove your value.
+When you answer:
+1. **Ground in real context**  
+   - Prefer information that comes from retrieved memories or provided context.  
+   - If you state a specific number, date, name, config value, or limit, it MUST be explicitly present in the context. If it is not, do not invent it.
 
-YOUR GOAL:
-Eliminate the need for the user to ask questions twice. Be proactive, brief, and technical.
-""",
-        tools=tools
+2. **Be clear about uncertainty**  
+   - If the answer is not in the context, say so directly and keep it short.  
+   - You may offer a brief, clearly-labelled hypothesis (e.g. "I don’t see this in the docs; my best guess is …"), but never present guesses as facts.
+
+3. **Cite your sources**  
+   - Whenever you rely on a memory, mention where it came from, e.g. "From Drive: …", "From Telegram: …", or "From Code: …".  
+   - If multiple sources agree, you can combine them, but still label them.
+
+4. **Use tools when helpful**  
+   - Use `get_recent_context` when the user references something that likely happened while they were away.  
+   - Use `create_file` when a persistent doc or onboarding artifact would help.  
+   - Use `generate_mermaid_graph` when a diagram or flow would make a process clearer.
+
+5. **Conversation behavior**  
+   - Treat the conversation as continuous; remember what was just discussed and refer back to it naturally.  
+   - Ask at most one short clarification question if the user’s request is ambiguous and that ambiguity materially affects the answer.
+
+6. **Style**  
+   - Default to concise, technically precise answers (often 2–5 sentences).  
+   - Use bullet points or short numbered lists when it improves readability.  
+   - Avoid hedging filler like "it seems" or "it appears" when you are quoting concrete context; otherwise be explicit about uncertainty.
+
+Your goal is to give fast, accurate, context-aware answers that are visibly grounded in the team’s real docs, chats, and code, and to avoid confidently stating anything that isn’t actually supported by that context.""",
+        tools=tools,
     )
     # Create entries for db
     db.create_assistant(assistant.assistant_id, client_id)
@@ -330,13 +346,17 @@ async def add_thread(client_id: str, content: str, status_code=201):
     # Normal response (no tool calls needed)
     return response.content if hasattr(response, 'content') else response.get('content') if isinstance(response, dict) else str(response)
 
-# query sends backboards response along with sources of information
 @app.post("/messages/query")
 async def query(client_id: str, content: str, status_code=201):
+    """
+    Send a message and return both the assistant response and any retrieved memories (sources).
+    This mirrors the tool-calling behavior of /messages/send so tools also work from the VS Code extension.
+    """
+    import json
     client = get_or_create_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client does not exist!")
-    # For simplicity, we assume that each client has one assistant
+
     backboard_client = BackboardClient(api_key=client["api_key"])
     assistant = db.lookup_assistant(client_id)
     if not assistant:
@@ -353,25 +373,147 @@ async def query(client_id: str, content: str, status_code=201):
         active_threads[client_id] = thread_id
 
     try:
-        output = []
-        sources = []
-        async for chunk in await backboard_client.add_message(
+        # First send the message (non-streaming) so we can detect tool calls
+        response = await backboard_client.add_message(
             thread_id=thread_id,
             content=content,
             memory="auto",
-            stream=True
-        ):
-            if chunk['type'] == 'content_streaming':
-                output.append(chunk['content'])
-            elif chunk['type'] == 'run_ended' and chunk.get("retrieved_memories", None):
-                memories = chunk['retrieved_memories']
-                for memory in memories:
-                    sources.append(memory['memory'])
-        
-        output = "".join(output)
-        return (output, sources)
+            stream=False,
+        )
+
+        # Normalize fields across dict/object responses
+        response_status = response.status if hasattr(response, "status") else response.get("status") if isinstance(response, dict) else None
+        response_tool_calls = response.tool_calls if hasattr(response, "tool_calls") else response.get("tool_calls") if isinstance(response, dict) else None
+        response_run_id = response.run_id if hasattr(response, "run_id") else response.get("run_id") if isinstance(response, dict) else None
+
+        final_response = response
+
+        # If Backboard requested tool calls, execute them and submit outputs
+        if response_status == "REQUIRES_ACTION" and response_tool_calls:
+            tool_outputs = []
+
+            for tc in response_tool_calls:
+                # Handle both dict and object tool call structures
+                if isinstance(tc, dict):
+                    tc_function = tc.get("function", {})
+                    tool_name = tc_function.get("name") if isinstance(tc_function, dict) else None
+                    args = tc_function.get("parsed_arguments", {}) if isinstance(tc_function, dict) else {}
+                    tc_id = tc.get("id")
+                else:
+                    if not hasattr(tc, "function"):
+                        continue
+                    tool_name = tc.function.name if hasattr(tc.function, "name") else None
+                    args = getattr(tc.function, "parsed_arguments", {})
+                    tc_id = tc.id if hasattr(tc, "id") else None
+
+                if not tool_name or not tc_id:
+                    continue
+
+                try:
+                    if tool_name == "create_file":
+                        filename = args.get("filename", "docs/ONBOARDING.md") if isinstance(args, dict) else getattr(args, "get", lambda k, d: d)("filename", "docs/ONBOARDING.md")
+                        result = await handle_create_file(
+                            client_id, filename, backboard_client, assistant_id, user_query=content
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool_call_id": tc_id,
+                                "output": json.dumps(result),
+                            }
+                        )
+                    elif tool_name == "get_recent_context":
+                        hours = args.get("hours", 24) if isinstance(args, dict) else getattr(args, "get", lambda k, d: d)("hours", 24)
+                        result = await handle_get_recent_context(
+                            client_id, backboard_client, assistant_id, hours
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool_call_id": tc_id,
+                                "output": json.dumps(result),
+                            }
+                        )
+                    elif tool_name == "generate_mermaid_graph":
+                        topic = args.get("topic", "feature lineage") if isinstance(args, dict) else getattr(args, "get", lambda k, d: d)("topic", "feature lineage")
+                        result = await handle_generate_mermaid_graph(
+                            client_id, topic, backboard_client, assistant_id
+                        )
+                        tool_outputs.append(
+                            {
+                                "tool_call_id": tc_id,
+                                "output": json.dumps(result),
+                            }
+                        )
+                    else:
+                        tool_outputs.append(
+                            {
+                                "tool_call_id": tc_id,
+                                "output": json.dumps({"error": f"Unknown tool: {tool_name}"}),
+                            }
+                        )
+                except Exception as e:
+                    print(f"Error executing tool {tool_name}: {e}")
+                    import traceback
+
+                    traceback.print_exc()
+                    tool_outputs.append(
+                        {
+                            "tool_call_id": tc_id,
+                            "output": json.dumps({"error": f"Tool execution failed: {str(e)}"}),
+                        }
+                    )
+
+            if tool_outputs:
+                if not response_run_id:
+                    raise ValueError("Response missing run_id")
+
+                final_response = await backboard_client.submit_tool_outputs(
+                    thread_id=thread_id,
+                    run_id=response_run_id,
+                    tool_outputs=tool_outputs,
+                )
+
+        # Extract content and any retrieved memories/sources
+        sources = []
+
+        # Handle object or dict style final response
+        content_value = None
+        if hasattr(final_response, "content"):
+            content_value = final_response.content
+        elif isinstance(final_response, dict):
+            content_value = final_response.get("content")
+
+        # retrieved_memories may live on the final_response
+        retrieved = None
+        if hasattr(final_response, "retrieved_memories"):
+            retrieved = final_response.retrieved_memories
+        elif isinstance(final_response, dict):
+            retrieved = final_response.get("retrieved_memories")
+
+        if retrieved:
+            for memory in retrieved:
+                # Backboard may return objects or dicts for memories
+                if isinstance(memory, dict):
+                    sources.append(memory.get("memory") or memory)
+                else:
+                    # Fallback: use raw object if we can't safely unpack
+                    try:
+                        sources.append(getattr(memory, "memory", memory))
+                    except Exception:
+                        sources.append(str(memory))
+
+        # Fallback if content_value is still None
+        if content_value is None:
+            content_value = str(final_response)
+
+        return (content_value, sources)
+
     except BackboardAPIError as e:
-        msg = f"Local Server Message: I detected that no real Backboard API Key is configured. Please add `BACKBOARD_API_KEY` to your `.env` file to enable real AI responses!" if "API Key" in str(e) else f"Local Server Error: {str(e)}"
+        msg = (
+            "Local Server Message: I detected that no real Backboard API Key is configured. "
+            "Please add `BACKBOARD_API_KEY` to your `.env` file to enable real AI responses!"
+            if "API Key" in str(e)
+            else f"Local Server Error: {str(e)}"
+        )
         return (msg, [])
     except Exception as e:
         return (f"Local Server unexpected error: {str(e)}", [])
