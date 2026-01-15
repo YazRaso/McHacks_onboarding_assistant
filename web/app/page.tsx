@@ -23,13 +23,6 @@ export default function Home() {
 
     const cards = [
         {
-            title: "Memory Overview",
-            description: "Visualize connected data sources and historical activity logs in real-time.",
-            href: "/memory",
-            icon: "psychology",
-            color: "from-blue-500/20 to-indigo-500/20",
-        },
-        {
             title: "Connected Apps",
             description: "Integrate with Google Drive, Telegram, and Jira to enrich your AI context.",
             href: "/connected",
