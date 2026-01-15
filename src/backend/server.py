@@ -306,7 +306,24 @@ async def add_thread(client_id: str, content: str, status_code=201):
 async def query(client_id: str, content: str, status_code=201):
     client = db.lookup_client(client_id)
     if not client:
-        raise HTTPException(status_code=404, detail="Client does not exist!")
+        # Auto-create client if it doesn't exist (for VS Code extension convenience)
+        # Use Backboard API key from environment or default to a placeholder
+        api_key = os.getenv("BACKBOARD_API_KEY", "mock_key_for_local_testing")
+        try:
+            backboard_client = BackboardClient(api_key=api_key)
+            assistant = await backboard_client.create_assistant(
+                name="Backboard Onboarding Assistant",
+                description=ONBOARDING_SYSTEM_PROMPT,
+            )
+            encrypted_api_key = encryption.encrypt_api_key(api_key)
+            db.create_assistant(assistant.assistant_id, client_id)
+            db.create_client(client_id, encrypted_api_key)
+            client = db.lookup_client(client_id)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to auto-create client: {str(e)}. Please create client manually via /client endpoint."
+            )
     # For simplicity, we assume that each client has one assistant
     decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
     backboard_client = BackboardClient(api_key=decrypted_api_key)
