@@ -80,7 +80,23 @@ export class BackboardService {
       });
 
       // Backend returns a tuple [response, sources]
-      const [content, sources] = response.data;
+      // Handle both array format [response, sources] and potential object format
+      let content: string;
+      let sources: string[] = [];
+      
+      if (Array.isArray(response.data)) {
+        [content, sources] = response.data;
+      } else if (typeof response.data === 'object' && response.data !== null) {
+        content = response.data.response || response.data.content || JSON.stringify(response.data);
+        sources = response.data.sources || [];
+      } else {
+        content = String(response.data || "No response received");
+      }
+
+      // Ensure content is not empty
+      if (!content || content.trim() === "") {
+        content = "I received your message but couldn't generate a response. Please try again.";
+      }
 
       // Convert sources to SourceFile format if available
       const sourceFiles: SourceFile[] =
@@ -113,101 +129,20 @@ export class BackboardService {
   }
 
   private async handleSourceRequest(message: string): Promise<ChatMessage> {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const mockSources: SourceFile[] = [
-      {
-        path: "src/backend/server.py",
-        lineStart: 67,
-        lineEnd: 92,
-        content: `@app.post("/messages/send")
-async def add_thread(client_id: str, content: str, status_code=201):
-    client = db.lookup_client(client_id)
-    if not client:
-        raise HTTPException(status_code=404, detail="Client does not exist!")
+    // Strip @source from the message and query the backend
+    const cleanedMessage = message.replace(/@source/gi, "").trim();
     
-    decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
-    backboard_client = BackboardClient(api_key=decrypted_api_key)
-    
-    assistant = db.lookup_assistant(client_id)
-    if not assistant:
-        raise HTTPException(status_code=404, detail="No assistant found!")
-    
-    assistant_id = assistant["assistant_id"]
-    thread = await backboard_client.create_thread(assistant_id)
-    
-    output = []
-    async for chunk in await backboard_client.add_message(
-        thread_id=thread.thread_id,
-        content=content,
-        memory="Auto",
-        stream=True,
-    ):
-        if chunk["type"] == "content_streaming":
-            output.append(chunk["content"])
-    
-    return "".join(output)`,
-      },
-      {
-        path: "src/backend/drive_service.py",
-        lineStart: 145,
-        lineEnd: 167,
-        content: `async def process_document(self, file_id: str, client_id: str):
-    try:
-        content = self.get_document_content(file_id)
-        
-        client = db.lookup_client(client_id)
-        if not client:
-            raise ValueError(f"Client {client_id} not found")
-        
-        decrypted_api_key = encryption.decrypt_api_key(client["api_key"])
-        backboard_client = BackboardClient(api_key=decrypted_api_key)
-        
-        assistant = db.lookup_assistant(client_id)
-        if not assistant:
-            raise ValueError(f"No assistant found for client {client_id}")
-        
-        assistant_id = assistant["assistant_id"]
-        
-        await backboard_client.upload_document_to_assistant(
-            assistant_id=assistant_id,
-            file_path=temp_file_path,
-            file_name=filename
-        )`,
-      },
-      {
-        path: "README.md",
-        lineStart: 1,
-        lineEnd: 15,
-        content: `# McHacks Onboarding Assistant
+    // If there's no actual query after removing @source, ask for clarification
+    if (!cleanedMessage) {
+      return {
+        role: "assistant",
+        content: "Please specify what you'd like to find sources for. For example: `@source how does authentication work?`",
+        timestamp: Date.now(),
+      };
+    }
 
-An intelligent onboarding assistant that integrates with:
-- Google Drive (meeting notes, documentation)
-- Git repositories (code history, changes)
-- Telegram (team conversations)
-
-All data is fed into the Backboard API for intelligent query answering.
-
-## Features
-
-- Real-time document monitoring with change detection
-- OAuth2 authentication for Google Drive
-- Automated polling for document updates
-- AI-powered question answering`,
-      },
-    ];
-
-    const cleanedMessage = message.replace("@source", "").trim();
-    const response = `Here are the source files related to "${cleanedMessage}":
-
-I found ${mockSources.length} relevant source files. Click on any file below to view the code.`;
-
-    return {
-      role: "assistant",
-      content: response,
-      timestamp: Date.now(),
-      sources: mockSources,
-    };
+    // Query the backend - sources will be included in the response
+    return this.queryBackend(cleanedMessage);
   }
 
   async checkConnection(): Promise<boolean> {
