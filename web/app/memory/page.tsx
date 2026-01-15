@@ -12,7 +12,7 @@ export default function MemoryPage() {
   const handleEvent = useCallback((event: DataEvent) => {
     // Show the active source animation
     setActiveSource(event.source);
-
+    //
     // Clear after 2 seconds
     setTimeout(() => {
       setActiveSource(null);
